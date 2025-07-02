@@ -160,5 +160,7 @@ torch::Tensor flashtp_large(
     return FlashTP_Large::apply(in1,in2,weight, per_edge_src, per_edge_dst, t_in1_idxing, t_in1_ival, t_in1_related_path_idx, t_path_array1,t_path_array2,t_per_upath_fiber_start, t_path_weight, t_per_path_weight_pos, t_per_upath_fiber_array,t_unique_cg_val, t_per_exec_info, upath_cnt, per_block_batch, max_ir_dim, out_size);
 }
 
+#ifdef FLASHTP_TORCHSCRIPT
 static auto registry = torch::RegisterOperators()
-    .op("flashtp_large_lammps::sptp_linear_fwd_v2_shared_exp", &flashtp_large);
+    .op("flashtp_large_kernel::sptp_linear_fwd_v2_shared_exp", &flashtp_large);
+#endif

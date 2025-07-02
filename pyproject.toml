@@ -6,12 +6,11 @@ readme = "README.md"
 requires-python = "==3.11.*"
 dependencies = [
     "torch>=2.4.1",
-    "e3nn",
-    "ninja"
+    "e3nn"
 ]
 
 [build-system]
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=61", "wheel", "torch>=2.4.1","ninja"]
 build-backend = "setuptools.build_meta"
 
 
@@ -21,8 +20,7 @@ exclude = ["example*"]
 
 [tool.setuptools.package-data]
 flashTP_e3nn = [
-    "sptp_exp_opt*/*.cpp",
-    "sptp_exp_opt*/*.cu",
-    "sptp_exp_opt*/*.hpp",
+    "sptp_exp_opt_extcg/*.{cpp,cu,hpp}",
+    "sptp_exp_opt_large/*.{cpp,cu,hpp}",
     "sptp_exp_opt*/CMakeLists.txt"
 ]

@@ -6,614 +6,616 @@ import e3nn
 import torch
 from torch.utils.cpp_extension import load
 
+import flashTP_e3nn.flashtp_large_kernel  as flashtp_large_kernel
 
 # flashtp_large_kernel = None
 
 
-# def _init():
-#     global flashtp_large_kernel
-#     if not flashtp_large_kernel:
-#         return
+def kernel_init():
+    # global flashtp_large_kernel
+    # print("flashtp_large_kernel", flashtp_large_kernel)
+    # if flashtp_large_kernel:
+    #     return
 
-# os.environ['TORCH_CUDA_ARCH_LIST'] = "8.0"
-script_dir = os.path.dirname(os.path.abspath(__file__))
-flashtp_large_kernel = load(
-    name="flashtp_large_kernel",
-    sources=[
-        f"{script_dir}/sptp_exp_opt_large.cpp",
-        f"{script_dir}/fwd_sptp_linear_v2_shared_exp.cu",
-        f"{script_dir}/torch_register.cpp",
-        f"{script_dir}/bwd_sptp_linear_shared_exp.cu",
-        f"{script_dir}/bwd_bwd_sptp_linear_v2_shared_exp.cu",
-        f"{script_dir}/fwd_sptp_linear_v2_shared_exp_double.cu",
-        f"{script_dir}/bwd_sptp_linear_shared_exp_double.cu",
-        f"{script_dir}/bwd_bwd_sptp_linear_v2_shared_exp_double.cu",
-    ],
-    extra_cuda_cflags=["-lineinfo"],
-    verbose=True,
-)
+    # # os.environ['TORCH_CUDA_ARCH_LIST'] = "8.0"
+    # script_dir = os.path.dirname(os.path.abspath(__file__))
+    # flashtp_large_kernel = load(
+    #     name="flashtp_large_kernel",
+    #     sources=[
+    #         f"{script_dir}/sptp_exp_opt_large.cpp",
+    #         f"{script_dir}/fwd_sptp_linear_v2_shared_exp.cu",
+    #         f"{script_dir}/torch_register.cpp",
+    #         f"{script_dir}/bwd_sptp_linear_shared_exp.cu",
+    #         f"{script_dir}/bwd_bwd_sptp_linear_v2_shared_exp.cu",
+    #         f"{script_dir}/fwd_sptp_linear_v2_shared_exp_double.cu",
+    #         f"{script_dir}/bwd_sptp_linear_shared_exp_double.cu",
+    #         f"{script_dir}/bwd_bwd_sptp_linear_v2_shared_exp_double.cu",
+    #     ],
+    #     extra_cuda_cflags=["-lineinfo"],
+    #     verbose=True,
+    # )
 
 
-@torch.library.custom_op(
-    "flashtp_large_kernel::sptp_linear_fwd_v2_shared_exp",
-    mutates_args=(),
-    device_types="cuda",
-)
-def sptp_linear_fwd_v2_shared_exp(
-    in1: torch.Tensor,
-    in2: torch.Tensor,
-    weight: torch.Tensor,
-    per_edge_src: torch.Tensor,
-    per_edge_dst: torch.Tensor,
-    t_in1_idxing: torch.Tensor,
-    t_in1_ival: torch.Tensor,
-    t_in1_related_path_idx: torch.Tensor,
-    t_path_array1: torch.Tensor,
-    t_path_array2: torch.Tensor,
-    t_per_upath_fiber_start: torch.Tensor,
-    t_path_weight: torch.Tensor,
-    t_per_path_weight_pos: torch.Tensor,
-    t_per_upath_fiber_array: torch.Tensor,
-    t_unique_cg_val: torch.Tensor,
-    t_per_exec_info: torch.Tensor,
-    upath_cnt: int,
-    per_block_batch: List[int],
-    max_ir_dim: int,
-    out_size: int,
-) -> torch.Tensor:
-    node_cnt = in1.shape[0]
-    out = torch.zeros((node_cnt, out_size), device=in1.device, dtype=in1.dtype)
+    @torch.library.custom_op(
+        "flashtp_large_kernel::sptp_linear_fwd_v2_shared_exp",
+        mutates_args=(),
+        device_types="cuda",
+    )
+    def sptp_linear_fwd_v2_shared_exp(
+        in1: torch.Tensor,
+        in2: torch.Tensor,
+        weight: torch.Tensor,
+        per_edge_src: torch.Tensor,
+        per_edge_dst: torch.Tensor,
+        t_in1_idxing: torch.Tensor,
+        t_in1_ival: torch.Tensor,
+        t_in1_related_path_idx: torch.Tensor,
+        t_path_array1: torch.Tensor,
+        t_path_array2: torch.Tensor,
+        t_per_upath_fiber_start: torch.Tensor,
+        t_path_weight: torch.Tensor,
+        t_per_path_weight_pos: torch.Tensor,
+        t_per_upath_fiber_array: torch.Tensor,
+        t_unique_cg_val: torch.Tensor,
+        t_per_exec_info: torch.Tensor,
+        upath_cnt: int,
+        per_block_batch: List[int],
+        max_ir_dim: int,
+        out_size: int,
+    ) -> torch.Tensor:
+        node_cnt = in1.shape[0]
+        out = torch.zeros((node_cnt, out_size), device=in1.device, dtype=in1.dtype)
 
-    assert in2.dtype == in1.dtype
-    assert weight.dtype == in1.dtype
+        assert in2.dtype == in1.dtype
+        assert weight.dtype == in1.dtype
 
-    flashtp_large_kernel.sptp_linear_fwd_v2_shared_exp(
-        in1,
-        in2,
-        weight,
-        out,
-        per_edge_src,
-        per_edge_dst,
-        t_in1_idxing,
-        t_in1_ival,
-        t_in1_related_path_idx,
-        t_path_array1,
-        t_path_array2,
-        t_per_upath_fiber_start,
-        t_path_weight,
-        t_per_path_weight_pos,
-        t_per_upath_fiber_array,
-        t_unique_cg_val,
-        t_per_exec_info,
-        upath_cnt,
-        per_block_batch[0],
-        max_ir_dim * 2 + 1,
+        flashtp_large_kernel.sptp_linear_fwd_v2_shared_exp(
+            in1,
+            in2,
+            weight,
+            out,
+            per_edge_src,
+            per_edge_dst,
+            t_in1_idxing,
+            t_in1_ival,
+            t_in1_related_path_idx,
+            t_path_array1,
+            t_path_array2,
+            t_per_upath_fiber_start,
+            t_path_weight,
+            t_per_path_weight_pos,
+            t_per_upath_fiber_array,
+            t_unique_cg_val,
+            t_per_exec_info,
+            upath_cnt,
+            per_block_batch[0],
+            max_ir_dim * 2 + 1,
+        )
+
+        return out
+
+
+    @sptp_linear_fwd_v2_shared_exp.register_fake
+    def _(
+        in1: torch.Tensor,
+        in2: torch.Tensor,
+        weight: torch.Tensor,
+        per_edge_src: torch.Tensor,
+        per_edge_dst: torch.Tensor,
+        t_in1_idxing: torch.Tensor,
+        t_in1_ival: torch.Tensor,
+        t_in1_related_path_idx: torch.Tensor,
+        t_path_array1: torch.Tensor,
+        t_path_array2: torch.Tensor,
+        t_per_upath_fiber_start: torch.Tensor,
+        t_path_weight: torch.Tensor,
+        t_per_path_weight_pos: torch.Tensor,
+        t_per_upath_fiber_array: torch.Tensor,
+        t_unique_cg_val: torch.Tensor,
+        t_per_exec_info: torch.Tensor,
+        upath_cnt: int,
+        per_block_batch: List[int],
+        max_ir_dim: int,
+        out_size: int,
+    ) -> torch.Tensor:
+        out = torch.empty((in1.size(0), out_size), device=in1.device, dtype=in1.dtype)
+
+        return out
+
+
+    def fused_e3nn_setup_fwd_context_exp(ctx, inputs, output):
+        (
+            in1,
+            in2,
+            weight,
+            per_edge_src,
+            per_edge_dst,
+            t_in1_idxing,
+            t_in1_ival,
+            t_in1_related_path_idx,
+            t_path_array1,
+            t_path_array2,
+            t_per_upath_fiber_start,
+            t_path_weight,
+            t_per_path_weight_pos,
+            t_per_upath_fiber_array,
+            t_unique_cg_val,
+            t_per_exec_info,
+            upath_cnt,
+            per_block_batch,
+            max_ir_dim,
+            out_size,
+        ) = inputs
+        ctx.save_for_backward(
+            in1,
+            in2,
+            weight,
+            per_edge_src,
+            per_edge_dst,
+            t_in1_idxing,
+            t_in1_ival,
+            t_in1_related_path_idx,
+            t_path_array1,
+            t_path_array2,
+            t_per_upath_fiber_start,
+            t_path_weight,
+            t_per_path_weight_pos,
+            t_per_upath_fiber_array,
+            t_unique_cg_val,
+            t_per_exec_info,
+        )
+        ctx.upath_cnt = upath_cnt
+        ctx.per_block_batch = per_block_batch
+        ctx.max_ir_dim = max_ir_dim
+
+
+    def fused_e3nn_bwd_exp(ctx, grad_output):
+        (
+            in1,
+            in2,
+            weight,
+            per_edge_src,
+            per_edge_dst,
+            t_in1_idxing,
+            t_in1_ival,
+            t_in1_related_path_idx,
+            t_path_array1,
+            t_path_array2,
+            t_per_upath_fiber_start,
+            t_path_weight,
+            t_per_path_weight_pos,
+            t_per_upath_fiber_array,
+            t_unique_cg_val,
+            t_per_exec_info,
+        ) = ctx.saved_tensors
+
+        grad_list = torch.ops.flashtp_large_kernel.sptp_linear_bwd_v2_shared_exp(
+            in1,
+            in2,
+            weight,
+            grad_output,
+            per_edge_src,
+            per_edge_dst,
+            t_in1_idxing,
+            t_in1_ival,
+            t_in1_related_path_idx,
+            t_path_array1,
+            t_path_array2,
+            t_per_upath_fiber_start,
+            t_path_weight,
+            t_per_path_weight_pos,
+            t_per_upath_fiber_array,
+            t_unique_cg_val,
+            t_per_exec_info,
+            ctx.upath_cnt,
+            ctx.per_block_batch,
+            ctx.max_ir_dim,
+        )
+
+        return (
+            grad_list[0],  # in1_grad
+            grad_list[1],  # in2_grad
+            grad_list[2],  # weight_grad
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+
+
+    @torch.library.custom_op(
+        "flashtp_large_kernel::sptp_linear_bwd_v2_shared_exp",
+        mutates_args=(),
+        device_types="cuda",
+    )
+    def sptp_linear_bwd_v2_shared_exp(
+        in1: torch.Tensor,
+        in2: torch.Tensor,
+        weight: torch.Tensor,
+        grad_output: torch.Tensor,
+        per_edge_src: torch.Tensor,
+        per_edge_dst: torch.Tensor,
+        t_in1_idxing: torch.Tensor,
+        t_in1_ival: torch.Tensor,
+        t_in1_related_path_idx: torch.Tensor,
+        t_path_array1: torch.Tensor,
+        t_path_array2: torch.Tensor,
+        t_per_upath_fiber_start: torch.Tensor,
+        t_path_weight: torch.Tensor,
+        t_per_path_weight_pos: torch.Tensor,
+        t_per_upath_fiber_array: torch.Tensor,
+        t_unique_cg_val: torch.Tensor,
+        t_per_exec_info: torch.Tensor,
+        upath_cnt: int,
+        per_block_batch: List[int],
+        max_ir_dim: int,
+    ) -> List[torch.Tensor]:
+        node_cnt = in1.shape[0]
+        batch_size = in2.shape[0]
+        in2_size = in2.shape[1]
+        in1_size = in1.shape[1]
+
+        mem_debug = torch.empty_like(grad_output)
+        # mem_debug = torch.empty((1,1),device=in1.device, dtype=in1.dtype)
+        # mem_dl_din1 = torch.empty((batch_size, in1_size) , device=in1.device, dtype=in1.dtype)
+        mem_dl_din1 = torch.zeros((node_cnt, in1_size), device=in1.device, dtype=in1.dtype)
+        mem_dl_din2 = torch.empty(
+            (batch_size, in2_size * upath_cnt), device=in1.device, dtype=in1.dtype
+        )
+        mem_dl_dw = torch.empty_like(weight)
+
+        assert in2.dtype == in1.dtype
+        assert weight.dtype == in1.dtype
+        assert grad_output.dtype == in1.dtype
+
+        flashtp_large_kernel.sptp_linear_bwd_v1_shared_exp(
+            in1,
+            in2,
+            weight,
+            grad_output.contiguous(),
+            per_edge_src,
+            per_edge_dst,
+            mem_dl_din1,
+            mem_dl_din2,
+            mem_dl_dw,
+            mem_debug,
+            t_in1_idxing,
+            t_in1_ival,
+            t_in1_related_path_idx,
+            t_path_array1,
+            t_path_array2,
+            t_per_upath_fiber_start,
+            t_path_weight,
+            t_per_path_weight_pos,
+            t_per_upath_fiber_array,
+            t_unique_cg_val,
+            t_per_exec_info,
+            upath_cnt,
+            per_block_batch[1],
+            max_ir_dim * 2 + 1,
+        )
+        mem_dl_din2_summed = mem_dl_din2.reshape((batch_size, upath_cnt, in2_size)).sum(
+            dim=1
+        )
+        # dl_din1_reduced = scatter(mem_dl_din1, per_edge_src.to(torch.int64), dim=0, dim_size=node_cnt, reduce="sum")
+
+        # del mem_dl_din1
+        del mem_dl_din2
+
+        return [mem_dl_din1, mem_dl_din2_summed, mem_dl_dw]
+        # return [dl_din1_reduced, mem_dl_din2_summed, mem_dl_dw]
+
+
+    @sptp_linear_bwd_v2_shared_exp.register_fake
+    def _(
+        in1: torch.Tensor,
+        in2: torch.Tensor,
+        weight: torch.Tensor,
+        grad_output: torch.Tensor,
+        per_edge_src: torch.Tensor,
+        per_edge_dst: torch.Tensor,
+        t_in1_idxing: torch.Tensor,
+        t_in1_ival: torch.Tensor,
+        t_in1_related_path_idx: torch.Tensor,
+        t_path_array1: torch.Tensor,
+        t_path_array2: torch.Tensor,
+        t_per_upath_fiber_start: torch.Tensor,
+        t_path_weight: torch.Tensor,
+        t_per_path_weight_pos: torch.Tensor,
+        t_per_upath_fiber_array: torch.Tensor,
+        t_unique_cg_val: torch.Tensor,
+        t_per_exec_info: torch.Tensor,
+        upath_cnt: int,
+        per_block_batch: List[int],
+        max_ir_dim: int,
+    ) -> List[torch.Tensor]:
+        dl_din1_reduced = torch.empty_like(in1)
+        mem_dl_din2_summed = torch.empty_like(in2)
+        mem_dl_dw = torch.empty_like(weight)
+
+        return [dl_din1_reduced, mem_dl_din2_summed, mem_dl_dw]
+
+
+    @torch.library.custom_op(
+        "flashtp_large_kernel::sptp_linear_bwd_bwd_v2_shared_exp",
+        mutates_args=(),
+        device_types="cuda",
+    )
+    def sptp_linear_bwd_bwd_v2_shared_exp(
+        dF_in1: torch.Tensor,
+        dF_in2: torch.Tensor,
+        dF_dw: torch.Tensor,
+        dE_dout: torch.Tensor,
+        in1: torch.Tensor,
+        in2: torch.Tensor,
+        weight: torch.Tensor,
+        per_edge_src: torch.Tensor,
+        per_edge_dst: torch.Tensor,
+        t_in1_idxing: torch.Tensor,
+        t_in1_ival: torch.Tensor,
+        t_in1_related_path_idx: torch.Tensor,
+        t_path_array1: torch.Tensor,
+        t_path_array2: torch.Tensor,
+        t_per_upath_fiber_start: torch.Tensor,
+        t_path_weight: torch.Tensor,
+        t_per_path_weight_pos: torch.Tensor,
+        t_per_upath_fiber_array: torch.Tensor,
+        t_unique_cg_val: torch.Tensor,
+        t_per_exec_info: torch.Tensor,
+        upath_cnt: int,
+        per_block_batch: List[int],
+        max_ir_dim: int,
+    ) -> List[torch.Tensor]:
+        node_cnt = in1.shape[0]
+        batch_size = in2.shape[0]
+        in1_size = in1.shape[1]
+        in2_size = in2.shape[1]
+        out_size = dE_dout.shape[1]
+
+        # torch.cuda.memory._dump_snapshot(f"/home2/lsy/mdsim/fused_e3nn/fused_e3nn_kernel/snap.pickle")
+
+        dF_dout = torch.zeros((node_cnt, out_size), device=in1.device, dtype=in1.dtype)
+        # dF_dout = torch.empty((batch_size, out_size) , device=in2.device, dtype=in2.dtype)
+        dL_din1 = torch.zeros((node_cnt, in1_size), device=in1.device, dtype=in1.dtype)
+        # dL_din1 = torch.empty((batch_size, in1_size) , device=in1.device, dtype=in1.dtype)
+        dL_din2_duplicate = torch.empty(
+            (batch_size, in2_size * upath_cnt), device=in1.device, dtype=in1.dtype
+        )
+        dL_dw = torch.empty_like(weight)
+        mem_debug = torch.empty((1, 1), device=in1.device, dtype=in1.dtype)
+
+        assert dF_in1.dtype == in1.dtype
+        assert dF_in2.dtype == in1.dtype
+        assert dF_dw.dtype == in1.dtype
+        assert dE_dout.dtype == in1.dtype
+        assert in2.dtype == in1.dtype
+        assert weight.dtype == in1.dtype
+
+        flashtp_large_kernel.sptp_linear_bwd_bwd_v2_shared_exp(
+            dF_in1,
+            dF_in2,
+            dF_dw,
+            dE_dout,
+            in1,
+            in2,
+            weight,
+            per_edge_src,
+            per_edge_dst,
+            dF_dout,
+            dL_dw,
+            dL_din1,
+            dL_din2_duplicate,
+            mem_debug,
+            t_in1_idxing,
+            t_in1_ival,
+            t_in1_related_path_idx,
+            t_path_array1,
+            t_path_array2,
+            t_per_upath_fiber_start,
+            t_path_weight,
+            t_per_path_weight_pos,
+            t_per_upath_fiber_array,
+            t_unique_cg_val,
+            t_per_exec_info,
+            upath_cnt,
+            per_block_batch[2],
+            max_ir_dim * 2 + 1,
+        )
+
+        dL_din2 = dL_din2_duplicate.reshape((batch_size, upath_cnt, in2_size)).sum(dim=1)
+        # dL_din1_reduced = scatter(dL_din1, per_edge_src.to(torch.int64), dim=0, dim_size=node_cnt, reduce="sum")
+
+        # del dL_din1
+        del dL_din2_duplicate
+        # del dF_dout
+
+        return [dL_din1, dL_din2, dL_dw, dF_dout]
+        # return [dL_din1_reduced, dL_din2, dL_dw, dF_dout_reduced]
+
+
+    @sptp_linear_bwd_bwd_v2_shared_exp.register_fake
+    def _(
+        dF_in1: torch.Tensor,
+        dF_in2: torch.Tensor,
+        dF_dw: torch.Tensor,
+        dE_dout: torch.Tensor,
+        in1: torch.Tensor,
+        in2: torch.Tensor,
+        weight: torch.Tensor,
+        per_edge_src: torch.Tensor,
+        per_edge_dst: torch.Tensor,
+        t_in1_idxing: torch.Tensor,
+        t_in1_ival: torch.Tensor,
+        t_in1_related_path_idx: torch.Tensor,
+        t_path_array1: torch.Tensor,
+        t_path_array2: torch.Tensor,
+        t_per_upath_fiber_start: torch.Tensor,
+        t_path_weight: torch.Tensor,
+        t_per_path_weight_pos: torch.Tensor,
+        t_per_upath_fiber_array: torch.Tensor,
+        t_unique_cg_val: torch.Tensor,
+        t_per_exec_info: torch.Tensor,
+        upath_cnt: int,
+        per_block_batch: List[int],
+        max_ir_dim: int,
+    ) -> List[torch.Tensor]:
+        dL_din1_reduced = torch.empty_like(in1)  # Same shape as in1
+        dL_din2 = torch.empty_like(in2)  # Same shape as in2
+        dL_dw = torch.empty_like(weight)  # Same shape as weight
+        dF_dout = torch.empty_like(dE_dout)  # Same shape as dE_dout
+
+        return [dL_din1_reduced, dL_din2, dL_dw, dF_dout]
+        # return [dL_din1_reduced, dL_din2, dL_dw, dF_dout_reduced]
+
+
+    def fused_e3nn_setup_bwd_context_exp(ctx, inputs, output):
+        (
+            in1,
+            in2,
+            weight,
+            dE_dout,
+            per_edge_src,
+            per_edge_dst,
+            t_in1_idxing,
+            t_in1_ival,
+            t_in1_related_path_idx,
+            t_path_array1,
+            t_path_array2,
+            t_per_upath_fiber_start,
+            t_path_weight,
+            t_per_path_weight_pos,
+            t_per_upath_fiber_array,
+            t_unique_cg_val,
+            t_per_exec_info,
+            upath_cnt,
+            per_block_batch,
+            max_ir_dim,
+        ) = inputs
+
+        ctx.save_for_backward(
+            dE_dout,
+            in1,
+            in2,
+            weight,
+            per_edge_src,
+            per_edge_dst,
+            t_in1_idxing,
+            t_in1_ival,
+            t_in1_related_path_idx,
+            t_path_array1,
+            t_path_array2,
+            t_per_upath_fiber_start,
+            t_path_weight,
+            t_per_path_weight_pos,
+            t_per_upath_fiber_array,
+            t_unique_cg_val,
+            t_per_exec_info,
+        )
+        ctx.upath_cnt = upath_cnt
+        ctx.per_block_batch = per_block_batch
+        ctx.max_ir_dim = max_ir_dim
+
+
+    @torch.compiler.allow_in_graph
+    def fused_e3nn_bwd_bwd_exp(ctx, grad_output):
+        (
+            dE_dout,
+            in1,
+            in2,
+            weight,
+            per_edge_src,
+            per_edge_dst,
+            t_in1_idxing,
+            t_in1_ival,
+            t_in1_related_path_idx,
+            t_path_array1,
+            t_path_array2,
+            t_per_upath_fiber_start,
+            t_path_weight,
+            t_per_path_weight_pos,
+            t_per_upath_fiber_array,
+            t_unique_cg_val,
+            t_per_exec_info,
+        ) = ctx.saved_tensors
+
+        dF_in1 = grad_output[0]
+        dF_in2 = grad_output[1]
+        dF_w = grad_output[2]
+
+        grad_list = torch.ops.flashtp_large_kernel.sptp_linear_bwd_bwd_v2_shared_exp(
+            dF_in1,
+            dF_in2,
+            dF_w,
+            dE_dout.detach(),
+            in1,
+            in2,
+            weight,
+            per_edge_src,
+            per_edge_dst,
+            t_in1_idxing,
+            t_in1_ival,
+            t_in1_related_path_idx,
+            t_path_array1,
+            t_path_array2,
+            t_per_upath_fiber_start,
+            t_path_weight,
+            t_per_path_weight_pos,
+            t_per_upath_fiber_array,
+            t_unique_cg_val,
+            t_per_exec_info,
+            ctx.upath_cnt,
+            ctx.per_block_batch,
+            ctx.max_ir_dim,
+        )
+
+        return (
+            grad_list[0],
+            grad_list[1],
+            grad_list[2],  # weight_grad
+            grad_list[3],  # mem_dL_dO_grad
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+
+
+    torch.library.register_autograd(
+        "flashtp_large_kernel::sptp_linear_fwd_v2_shared_exp",
+        fused_e3nn_bwd_exp,
+        setup_context=fused_e3nn_setup_fwd_context_exp,
     )
 
-    return out
-
-
-@sptp_linear_fwd_v2_shared_exp.register_fake
-def _(
-    in1: torch.Tensor,
-    in2: torch.Tensor,
-    weight: torch.Tensor,
-    per_edge_src: torch.Tensor,
-    per_edge_dst: torch.Tensor,
-    t_in1_idxing: torch.Tensor,
-    t_in1_ival: torch.Tensor,
-    t_in1_related_path_idx: torch.Tensor,
-    t_path_array1: torch.Tensor,
-    t_path_array2: torch.Tensor,
-    t_per_upath_fiber_start: torch.Tensor,
-    t_path_weight: torch.Tensor,
-    t_per_path_weight_pos: torch.Tensor,
-    t_per_upath_fiber_array: torch.Tensor,
-    t_unique_cg_val: torch.Tensor,
-    t_per_exec_info: torch.Tensor,
-    upath_cnt: int,
-    per_block_batch: List[int],
-    max_ir_dim: int,
-    out_size: int,
-) -> torch.Tensor:
-    out = torch.empty((in1.size(0), out_size), device=in1.device, dtype=in1.dtype)
-
-    return out
-
-
-def fused_e3nn_setup_fwd_context_exp(ctx, inputs, output):
-    (
-        in1,
-        in2,
-        weight,
-        per_edge_src,
-        per_edge_dst,
-        t_in1_idxing,
-        t_in1_ival,
-        t_in1_related_path_idx,
-        t_path_array1,
-        t_path_array2,
-        t_per_upath_fiber_start,
-        t_path_weight,
-        t_per_path_weight_pos,
-        t_per_upath_fiber_array,
-        t_unique_cg_val,
-        t_per_exec_info,
-        upath_cnt,
-        per_block_batch,
-        max_ir_dim,
-        out_size,
-    ) = inputs
-    ctx.save_for_backward(
-        in1,
-        in2,
-        weight,
-        per_edge_src,
-        per_edge_dst,
-        t_in1_idxing,
-        t_in1_ival,
-        t_in1_related_path_idx,
-        t_path_array1,
-        t_path_array2,
-        t_per_upath_fiber_start,
-        t_path_weight,
-        t_per_path_weight_pos,
-        t_per_upath_fiber_array,
-        t_unique_cg_val,
-        t_per_exec_info,
+    torch.library.register_autograd(
+        "flashtp_large_kernel::sptp_linear_bwd_v2_shared_exp",
+        fused_e3nn_bwd_bwd_exp,
+        setup_context=fused_e3nn_setup_bwd_context_exp,
     )
-    ctx.upath_cnt = upath_cnt
-    ctx.per_block_batch = per_block_batch
-    ctx.max_ir_dim = max_ir_dim
-
-
-def fused_e3nn_bwd_exp(ctx, grad_output):
-    (
-        in1,
-        in2,
-        weight,
-        per_edge_src,
-        per_edge_dst,
-        t_in1_idxing,
-        t_in1_ival,
-        t_in1_related_path_idx,
-        t_path_array1,
-        t_path_array2,
-        t_per_upath_fiber_start,
-        t_path_weight,
-        t_per_path_weight_pos,
-        t_per_upath_fiber_array,
-        t_unique_cg_val,
-        t_per_exec_info,
-    ) = ctx.saved_tensors
-
-    grad_list = torch.ops.flashtp_large_kernel.sptp_linear_bwd_v2_shared_exp(
-        in1,
-        in2,
-        weight,
-        grad_output,
-        per_edge_src,
-        per_edge_dst,
-        t_in1_idxing,
-        t_in1_ival,
-        t_in1_related_path_idx,
-        t_path_array1,
-        t_path_array2,
-        t_per_upath_fiber_start,
-        t_path_weight,
-        t_per_path_weight_pos,
-        t_per_upath_fiber_array,
-        t_unique_cg_val,
-        t_per_exec_info,
-        ctx.upath_cnt,
-        ctx.per_block_batch,
-        ctx.max_ir_dim,
-    )
-
-    return (
-        grad_list[0],  # in1_grad
-        grad_list[1],  # in2_grad
-        grad_list[2],  # weight_grad
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-    )
-
-
-@torch.library.custom_op(
-    "flashtp_large_kernel::sptp_linear_bwd_v2_shared_exp",
-    mutates_args=(),
-    device_types="cuda",
-)
-def sptp_linear_bwd_v2_shared_exp(
-    in1: torch.Tensor,
-    in2: torch.Tensor,
-    weight: torch.Tensor,
-    grad_output: torch.Tensor,
-    per_edge_src: torch.Tensor,
-    per_edge_dst: torch.Tensor,
-    t_in1_idxing: torch.Tensor,
-    t_in1_ival: torch.Tensor,
-    t_in1_related_path_idx: torch.Tensor,
-    t_path_array1: torch.Tensor,
-    t_path_array2: torch.Tensor,
-    t_per_upath_fiber_start: torch.Tensor,
-    t_path_weight: torch.Tensor,
-    t_per_path_weight_pos: torch.Tensor,
-    t_per_upath_fiber_array: torch.Tensor,
-    t_unique_cg_val: torch.Tensor,
-    t_per_exec_info: torch.Tensor,
-    upath_cnt: int,
-    per_block_batch: List[int],
-    max_ir_dim: int,
-) -> List[torch.Tensor]:
-    node_cnt = in1.shape[0]
-    batch_size = in2.shape[0]
-    in2_size = in2.shape[1]
-    in1_size = in1.shape[1]
-
-    mem_debug = torch.empty_like(grad_output)
-    # mem_debug = torch.empty((1,1),device=in1.device, dtype=in1.dtype)
-    # mem_dl_din1 = torch.empty((batch_size, in1_size) , device=in1.device, dtype=in1.dtype)
-    mem_dl_din1 = torch.zeros((node_cnt, in1_size), device=in1.device, dtype=in1.dtype)
-    mem_dl_din2 = torch.empty(
-        (batch_size, in2_size * upath_cnt), device=in1.device, dtype=in1.dtype
-    )
-    mem_dl_dw = torch.empty_like(weight)
-
-    assert in2.dtype == in1.dtype
-    assert weight.dtype == in1.dtype
-    assert grad_output.dtype == in1.dtype
-
-    flashtp_large_kernel.sptp_linear_bwd_v1_shared_exp(
-        in1,
-        in2,
-        weight,
-        grad_output.contiguous(),
-        per_edge_src,
-        per_edge_dst,
-        mem_dl_din1,
-        mem_dl_din2,
-        mem_dl_dw,
-        mem_debug,
-        t_in1_idxing,
-        t_in1_ival,
-        t_in1_related_path_idx,
-        t_path_array1,
-        t_path_array2,
-        t_per_upath_fiber_start,
-        t_path_weight,
-        t_per_path_weight_pos,
-        t_per_upath_fiber_array,
-        t_unique_cg_val,
-        t_per_exec_info,
-        upath_cnt,
-        per_block_batch[1],
-        max_ir_dim * 2 + 1,
-    )
-    mem_dl_din2_summed = mem_dl_din2.reshape((batch_size, upath_cnt, in2_size)).sum(
-        dim=1
-    )
-    # dl_din1_reduced = scatter(mem_dl_din1, per_edge_src.to(torch.int64), dim=0, dim_size=node_cnt, reduce="sum")
-
-    # del mem_dl_din1
-    del mem_dl_din2
-
-    return [mem_dl_din1, mem_dl_din2_summed, mem_dl_dw]
-    # return [dl_din1_reduced, mem_dl_din2_summed, mem_dl_dw]
-
-
-@sptp_linear_bwd_v2_shared_exp.register_fake
-def _(
-    in1: torch.Tensor,
-    in2: torch.Tensor,
-    weight: torch.Tensor,
-    grad_output: torch.Tensor,
-    per_edge_src: torch.Tensor,
-    per_edge_dst: torch.Tensor,
-    t_in1_idxing: torch.Tensor,
-    t_in1_ival: torch.Tensor,
-    t_in1_related_path_idx: torch.Tensor,
-    t_path_array1: torch.Tensor,
-    t_path_array2: torch.Tensor,
-    t_per_upath_fiber_start: torch.Tensor,
-    t_path_weight: torch.Tensor,
-    t_per_path_weight_pos: torch.Tensor,
-    t_per_upath_fiber_array: torch.Tensor,
-    t_unique_cg_val: torch.Tensor,
-    t_per_exec_info: torch.Tensor,
-    upath_cnt: int,
-    per_block_batch: List[int],
-    max_ir_dim: int,
-) -> List[torch.Tensor]:
-    dl_din1_reduced = torch.empty_like(in1)
-    mem_dl_din2_summed = torch.empty_like(in2)
-    mem_dl_dw = torch.empty_like(weight)
-
-    return [dl_din1_reduced, mem_dl_din2_summed, mem_dl_dw]
-
-
-@torch.library.custom_op(
-    "flashtp_large_kernel::sptp_linear_bwd_bwd_v2_shared_exp",
-    mutates_args=(),
-    device_types="cuda",
-)
-def sptp_linear_bwd_bwd_v2_shared_exp(
-    dF_in1: torch.Tensor,
-    dF_in2: torch.Tensor,
-    dF_dw: torch.Tensor,
-    dE_dout: torch.Tensor,
-    in1: torch.Tensor,
-    in2: torch.Tensor,
-    weight: torch.Tensor,
-    per_edge_src: torch.Tensor,
-    per_edge_dst: torch.Tensor,
-    t_in1_idxing: torch.Tensor,
-    t_in1_ival: torch.Tensor,
-    t_in1_related_path_idx: torch.Tensor,
-    t_path_array1: torch.Tensor,
-    t_path_array2: torch.Tensor,
-    t_per_upath_fiber_start: torch.Tensor,
-    t_path_weight: torch.Tensor,
-    t_per_path_weight_pos: torch.Tensor,
-    t_per_upath_fiber_array: torch.Tensor,
-    t_unique_cg_val: torch.Tensor,
-    t_per_exec_info: torch.Tensor,
-    upath_cnt: int,
-    per_block_batch: List[int],
-    max_ir_dim: int,
-) -> List[torch.Tensor]:
-    node_cnt = in1.shape[0]
-    batch_size = in2.shape[0]
-    in1_size = in1.shape[1]
-    in2_size = in2.shape[1]
-    out_size = dE_dout.shape[1]
-
-    # torch.cuda.memory._dump_snapshot(f"/home2/lsy/mdsim/fused_e3nn/fused_e3nn_kernel/snap.pickle")
-
-    dF_dout = torch.zeros((node_cnt, out_size), device=in1.device, dtype=in1.dtype)
-    # dF_dout = torch.empty((batch_size, out_size) , device=in2.device, dtype=in2.dtype)
-    dL_din1 = torch.zeros((node_cnt, in1_size), device=in1.device, dtype=in1.dtype)
-    # dL_din1 = torch.empty((batch_size, in1_size) , device=in1.device, dtype=in1.dtype)
-    dL_din2_duplicate = torch.empty(
-        (batch_size, in2_size * upath_cnt), device=in1.device, dtype=in1.dtype
-    )
-    dL_dw = torch.empty_like(weight)
-    mem_debug = torch.empty((1, 1), device=in1.device, dtype=in1.dtype)
-
-    assert dF_in1.dtype == in1.dtype
-    assert dF_in2.dtype == in1.dtype
-    assert dF_dw.dtype == in1.dtype
-    assert dE_dout.dtype == in1.dtype
-    assert in2.dtype == in1.dtype
-    assert weight.dtype == in1.dtype
-
-    flashtp_large_kernel.sptp_linear_bwd_bwd_v2_shared_exp(
-        dF_in1,
-        dF_in2,
-        dF_dw,
-        dE_dout,
-        in1,
-        in2,
-        weight,
-        per_edge_src,
-        per_edge_dst,
-        dF_dout,
-        dL_dw,
-        dL_din1,
-        dL_din2_duplicate,
-        mem_debug,
-        t_in1_idxing,
-        t_in1_ival,
-        t_in1_related_path_idx,
-        t_path_array1,
-        t_path_array2,
-        t_per_upath_fiber_start,
-        t_path_weight,
-        t_per_path_weight_pos,
-        t_per_upath_fiber_array,
-        t_unique_cg_val,
-        t_per_exec_info,
-        upath_cnt,
-        per_block_batch[2],
-        max_ir_dim * 2 + 1,
-    )
-
-    dL_din2 = dL_din2_duplicate.reshape((batch_size, upath_cnt, in2_size)).sum(dim=1)
-    # dL_din1_reduced = scatter(dL_din1, per_edge_src.to(torch.int64), dim=0, dim_size=node_cnt, reduce="sum")
-
-    # del dL_din1
-    del dL_din2_duplicate
-    # del dF_dout
-
-    return [dL_din1, dL_din2, dL_dw, dF_dout]
-    # return [dL_din1_reduced, dL_din2, dL_dw, dF_dout_reduced]
-
-
-@sptp_linear_bwd_bwd_v2_shared_exp.register_fake
-def _(
-    dF_in1: torch.Tensor,
-    dF_in2: torch.Tensor,
-    dF_dw: torch.Tensor,
-    dE_dout: torch.Tensor,
-    in1: torch.Tensor,
-    in2: torch.Tensor,
-    weight: torch.Tensor,
-    per_edge_src: torch.Tensor,
-    per_edge_dst: torch.Tensor,
-    t_in1_idxing: torch.Tensor,
-    t_in1_ival: torch.Tensor,
-    t_in1_related_path_idx: torch.Tensor,
-    t_path_array1: torch.Tensor,
-    t_path_array2: torch.Tensor,
-    t_per_upath_fiber_start: torch.Tensor,
-    t_path_weight: torch.Tensor,
-    t_per_path_weight_pos: torch.Tensor,
-    t_per_upath_fiber_array: torch.Tensor,
-    t_unique_cg_val: torch.Tensor,
-    t_per_exec_info: torch.Tensor,
-    upath_cnt: int,
-    per_block_batch: List[int],
-    max_ir_dim: int,
-) -> List[torch.Tensor]:
-    dL_din1_reduced = torch.empty_like(in1)  # Same shape as in1
-    dL_din2 = torch.empty_like(in2)  # Same shape as in2
-    dL_dw = torch.empty_like(weight)  # Same shape as weight
-    dF_dout = torch.empty_like(dE_dout)  # Same shape as dE_dout
-
-    return [dL_din1_reduced, dL_din2, dL_dw, dF_dout]
-    # return [dL_din1_reduced, dL_din2, dL_dw, dF_dout_reduced]
-
-
-def fused_e3nn_setup_bwd_context_exp(ctx, inputs, output):
-    (
-        in1,
-        in2,
-        weight,
-        dE_dout,
-        per_edge_src,
-        per_edge_dst,
-        t_in1_idxing,
-        t_in1_ival,
-        t_in1_related_path_idx,
-        t_path_array1,
-        t_path_array2,
-        t_per_upath_fiber_start,
-        t_path_weight,
-        t_per_path_weight_pos,
-        t_per_upath_fiber_array,
-        t_unique_cg_val,
-        t_per_exec_info,
-        upath_cnt,
-        per_block_batch,
-        max_ir_dim,
-    ) = inputs
-
-    ctx.save_for_backward(
-        dE_dout,
-        in1,
-        in2,
-        weight,
-        per_edge_src,
-        per_edge_dst,
-        t_in1_idxing,
-        t_in1_ival,
-        t_in1_related_path_idx,
-        t_path_array1,
-        t_path_array2,
-        t_per_upath_fiber_start,
-        t_path_weight,
-        t_per_path_weight_pos,
-        t_per_upath_fiber_array,
-        t_unique_cg_val,
-        t_per_exec_info,
-    )
-    ctx.upath_cnt = upath_cnt
-    ctx.per_block_batch = per_block_batch
-    ctx.max_ir_dim = max_ir_dim
-
-
-@torch.compiler.allow_in_graph
-def fused_e3nn_bwd_bwd_exp(ctx, grad_output):
-    (
-        dE_dout,
-        in1,
-        in2,
-        weight,
-        per_edge_src,
-        per_edge_dst,
-        t_in1_idxing,
-        t_in1_ival,
-        t_in1_related_path_idx,
-        t_path_array1,
-        t_path_array2,
-        t_per_upath_fiber_start,
-        t_path_weight,
-        t_per_path_weight_pos,
-        t_per_upath_fiber_array,
-        t_unique_cg_val,
-        t_per_exec_info,
-    ) = ctx.saved_tensors
-
-    dF_in1 = grad_output[0]
-    dF_in2 = grad_output[1]
-    dF_w = grad_output[2]
-
-    grad_list = torch.ops.flashtp_large_kernel.sptp_linear_bwd_bwd_v2_shared_exp(
-        dF_in1,
-        dF_in2,
-        dF_w,
-        dE_dout.detach(),
-        in1,
-        in2,
-        weight,
-        per_edge_src,
-        per_edge_dst,
-        t_in1_idxing,
-        t_in1_ival,
-        t_in1_related_path_idx,
-        t_path_array1,
-        t_path_array2,
-        t_per_upath_fiber_start,
-        t_path_weight,
-        t_per_path_weight_pos,
-        t_per_upath_fiber_array,
-        t_unique_cg_val,
-        t_per_exec_info,
-        ctx.upath_cnt,
-        ctx.per_block_batch,
-        ctx.max_ir_dim,
-    )
-
-    return (
-        grad_list[0],
-        grad_list[1],
-        grad_list[2],  # weight_grad
-        grad_list[3],  # mem_dL_dO_grad
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-    )
-
-
-torch.library.register_autograd(
-    "flashtp_large_kernel::sptp_linear_fwd_v2_shared_exp",
-    fused_e3nn_bwd_exp,
-    setup_context=fused_e3nn_setup_fwd_context_exp,
-)
-
-torch.library.register_autograd(
-    "flashtp_large_kernel::sptp_linear_bwd_v2_shared_exp",
-    fused_e3nn_bwd_bwd_exp,
-    setup_context=fused_e3nn_setup_bwd_context_exp,
-)
 
 
 def find_optimal_yz(x, max_y=32):
@@ -668,7 +670,7 @@ class fused_uvu_TP_exp_opt_large(torch.nn.Module):
         dtype=torch.float32,
     ):
         super().__init__()
-        # _init()
+        kernel_init()
 
         self.i_in1 = i_in1
         self.i_in2 = i_in2
@@ -788,6 +790,7 @@ class fused_uvu_TP_exp_opt_large(torch.nn.Module):
         # )
         # for testing Lammps integration
         # out = torch.ops.flashtp_large_lammps.sptp_linear_fwd_v2_shared_exp(in1, in2, weight, per_edge_src, per_edge_dst, *self.metadata_list, self.per_block_opt_batch, self.l_max, self.out_dim)
+        print(torch.ops.flashtp_large_kernel)
 
         out = torch.ops.flashtp_large_kernel.sptp_linear_fwd_v2_shared_exp(
             in1,

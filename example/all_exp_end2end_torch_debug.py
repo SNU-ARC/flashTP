@@ -30,7 +30,7 @@ def main():
     filename = sys.argv[1]
     layer_idx = int(sys.argv[2])
     target_batch_size = int(sys.argv[3]) # 16k, 32k
-    block_batch_cnt = int(sys.argv[4]) # 4
+    # block_batch_cnt = int(sys.argv[4]) # 4
     used_dtype_str = sys.argv[5]
     run_cueq = sys.argv[6]
     result_dir = sys.argv[7]
@@ -85,7 +85,7 @@ def main():
     torch.set_default_dtype(used_dtype)
     tp = e3nn.o3.TensorProduct(i_in1,i_in2,i_out,inst_tuple,shared_weights=False, internal_weights=False) # path_normalization="none", normalization="none"
     tp = tp.to(device="cuda")  
-    fused_tp_exp = flashTP_e3nn.uvu_TP(i_in1,i_in2,i_out,inst_tuple, block_batch_cnt=block_batch_cnt, device="cuda", dtype=used_dtype)
+    fused_tp_exp = flashTP_e3nn.uvu_TP(i_in1,i_in2,i_out,inst_tuple, device="cuda", dtype=used_dtype)
 
        
     # problem = oeq.TPProblem(i_in1,i_in2,i_out,inst_tuple, shared_weights=False, internal_weights=False)

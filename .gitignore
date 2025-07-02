@@ -13,4 +13,5 @@ dump/module.py
 dump/state_dict.pt
 .vscode/
 flashTP_e3nn.egg-info/*
-*.txt
+/*.txt
+*.so

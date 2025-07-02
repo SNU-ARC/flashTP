@@ -2,7 +2,6 @@ import torch
 import e3nn
 import itertools
 
-from .sptp_exp_opt.fused_e3nn_exp_opt import fused_uvu_TP_exp_opt
 from .sptp_exp_opt_large.fused_e3nn_exp_opt_large import fused_uvu_TP_exp_opt_large
 from .sptp_exp_opt_extcg.fused_e3nn_exp_opt_extcg import fused_uvu_TP_exp_opt_extcg
 
@@ -76,17 +75,6 @@ def uvu_TP(
                 instructions=tp.instructions,
                 unique_cg_mat=unique_cg_mat,
                 unique_cg_val = unique_cg_val,
-                per_block_batch=block_batch_cnt,
-                device=device,
-                dtype=dtype
-            )
-        else:
-            print("fused_uvu_TP_exp_opt")
-            return fused_uvu_TP_exp_opt(
-                i_in1=irreps_in1,
-                i_in2=irreps_in2,
-                i_out=irreps_out,
-                inst_tuple=instructions,
                 per_block_batch=block_batch_cnt,
                 device=device,
                 dtype=dtype

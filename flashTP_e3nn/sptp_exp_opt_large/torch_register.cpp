@@ -162,5 +162,5 @@ torch::Tensor flashtp_large(
 
 #ifdef FLASHTP_TORCHSCRIPT
 static auto registry = torch::RegisterOperators()
-    .op("flashtp_large_kernel::sptp_linear_fwd_v2_shared_exp", &flashtp_large);
+    .op("flashtp_large_kernel_lammps::sptp_linear_fwd_v2_shared_exp", &flashtp_large);
 #endif

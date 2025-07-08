@@ -38,11 +38,29 @@ setup(
     ext_modules=[
         # large kernel
         CUDAExtension(
-            name="flashTP_e3nn.flashtp_large_kernel",
+            name="flashTP_e3nn.flashtp_large_kernel_lammps",
             sources=[
                 "flashTP_e3nn/sptp_exp_opt_large/sptp_exp_opt_large.cpp",
                 "flashTP_e3nn/sptp_exp_opt_large/fwd_sptp_linear_v2_shared_exp.cu",
                 "flashTP_e3nn/sptp_exp_opt_large/torch_register.cpp",
+                "flashTP_e3nn/sptp_exp_opt_large/bwd_sptp_linear_shared_exp.cu",
+                "flashTP_e3nn/sptp_exp_opt_large/bwd_bwd_sptp_linear_v2_shared_exp.cu",
+                "flashTP_e3nn/sptp_exp_opt_large/fwd_sptp_linear_v2_shared_exp_double.cu",
+                "flashTP_e3nn/sptp_exp_opt_large/bwd_sptp_linear_shared_exp_double.cu",
+                "flashTP_e3nn/sptp_exp_opt_large/bwd_bwd_sptp_linear_v2_shared_exp_double.cu",
+            ],
+            extra_compile_args={
+                "cxx": ["-O2", "-DFLASHTP_TORCHSCRIPT"],
+                "nvcc": nvcc_flags,
+            },
+        ),
+        # large kernel
+        CUDAExtension(
+            name="flashTP_e3nn.flashtp_large_kernel",
+            sources=[
+                "flashTP_e3nn/sptp_exp_opt_large/sptp_exp_opt_large.cpp",
+                "flashTP_e3nn/sptp_exp_opt_large/fwd_sptp_linear_v2_shared_exp.cu",
+                # "flashTP_e3nn/sptp_exp_opt_large/torch_register.cpp",
                 "flashTP_e3nn/sptp_exp_opt_large/bwd_sptp_linear_shared_exp.cu",
                 "flashTP_e3nn/sptp_exp_opt_large/bwd_bwd_sptp_linear_v2_shared_exp.cu",
                 "flashTP_e3nn/sptp_exp_opt_large/fwd_sptp_linear_v2_shared_exp_double.cu",

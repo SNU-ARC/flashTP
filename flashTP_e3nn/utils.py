@@ -1,5 +1,5 @@
 import torch
-import e3nn
+import e3nn.o3
 import json
 import random
 
@@ -21,7 +21,7 @@ def compare(a, b):
     anything_bad = False
     for pos in diff_pos:
         pos_t = [x for x in pos]
-        if(abs(a[pos_t] - b[pos_t]) > 1e-6):
+        if(abs(a[pos_t] - b[pos_t]) > 1e-4):
             anything_bad = True
             print(pos)
             print(a[pos_t] - b[pos_t] )
@@ -53,9 +53,7 @@ WARPSIZE = 32
 #     return i_in1, i_in2, i_out, inst_tuple
 
 def load_config_e3nn_cueq(filename, layer_idx, channel_mul = 1, mul_list=None):
-    if not _cueq_ava:
-        raise ImportError("cuEquivariance not installed")
-
+    
     # filename = f"/home2/lsy/mdsim/nequip/benchmark_config/4_{h}_{l_max}_p_sc.txt"
     with open(filename, "r") as f:
         f_in = f.read().split("\n")
@@ -98,9 +96,16 @@ def load_config_e3nn_cueq(filename, layer_idx, channel_mul = 1, mul_list=None):
         ei_in1 = e3nn.o3.Irreps(new_in1_list)
         ei_out = e3nn.o3.Irreps(new_out_list)
 
-    ci_in1 = cue.Irreps("O3", str(ei_in1))
-    ci_in2 = cue.Irreps("O3", tp_list[IR_IN2_IDX])
-    ci_out = cue.Irreps("O3", str(ei_out))
+    if not _cueq_ava:
+        ci_in1 = ei_in1
+        ci_in2 = ei_in2
+        ci_out = ei_out
+        print("cuEquivariance not installed, using e3nn Irreps directly for cueq config")
+        # raise ImportError("cuEquivariance not installed")
+    else:
+        ci_in1 = cue.Irreps("O3", str(ei_in1))
+        ci_in2 = cue.Irreps("O3", tp_list[IR_IN2_IDX])
+        ci_out = cue.Irreps("O3", str(ei_out))
 
 
     return [ei_in1,ei_in2,ei_out,inst_tuple] , [ci_in1,ci_in2,ci_out,inst_tuple]

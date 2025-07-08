@@ -1,8 +1,6 @@
-import os
 import itertools
 from typing import List, Tuple
 
-import e3nn
 import torch
 from torch.utils.cpp_extension import load
 
@@ -790,8 +788,6 @@ class fused_uvu_TP_exp_opt_large(torch.nn.Module):
         # )
         # for testing Lammps integration
         # out = torch.ops.flashtp_large_lammps.sptp_linear_fwd_v2_shared_exp(in1, in2, weight, per_edge_src, per_edge_dst, *self.metadata_list, self.per_block_opt_batch, self.l_max, self.out_dim)
-        print(torch.ops.flashtp_large_kernel)
-
         out = torch.ops.flashtp_large_kernel.sptp_linear_fwd_v2_shared_exp(
             in1,
             in2,

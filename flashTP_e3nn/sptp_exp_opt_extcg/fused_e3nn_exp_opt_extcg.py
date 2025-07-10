@@ -762,23 +762,6 @@ class fused_uvu_TP_exp_opt_extcg(torch.nn.Module):
             ]
         )
 
-        ## forward
-
-        # _irreps_out = [e3nn.o3.Irrep(o.ir.l, o.ir.p) for o in i_out]
-        # uvuv_tp = e3nn.o3.FullTensorProduct(i_in1, i_in2, filter_ir_out=_irreps_out)
-        # uvuv_i_out = uvuv_tp.irreps_out
-        # tp = e3nn.o3.TensorProduct(
-        #     i_in1,
-        #     i_in2,
-        #     i_out,
-        #     inst_tuple,
-        #     shared_weights=shared_weights,
-        #     internal_weights=internal_weights,
-        # )
-
-        # unique_cg, unique_cg_mat = self.extract_cg_info(
-        #     uvuv_i_out, uvuv_tp.instructions
-        # )
         
         self.unique_cg_val = unique_cg_val
 
@@ -868,85 +851,6 @@ class fused_uvu_TP_exp_opt_extcg(torch.nn.Module):
         )
         return out
 
-    # def extract_cg_info(self, uvuv_i_out, instructions):
-    #     unique_cg = []
-    #     # asdfasd = []
-    #     unique_cg_mat = {}
-    #     idx = 0
-    #     for inst in instructions:
-    #         i = inst.i_in1
-    #         j = inst.i_in2
-    #         k = inst.i_out
-
-    #         mul_in1, ir_in1 = self.i_in1[i]
-    #         mul_in2, ir_in2 = self.i_in2[j]
-    #         mul_out, ir_out = uvuv_i_out[k]
-
-    #         cg = e3nn.o3.wigner_3j(ir_in1.l, ir_in2.l, ir_out.l)
-    #         # print(idx, cg.unique())
-    #         idx += 1
-    #         # asdfasd.append(cg.unique().tolist())
-    #         # remove small difference in fp64 precision problem
-    #         # by converting it to fp32 then back to target dtype
-    #         cg_fp32 = cg.to(torch.float32)
-    #         unique_cg += cg_fp32.unique().to(self.dtype).tolist()
-
-    #         partial_mat_cg = torch.zeros(
-    #             self.i_in1[i].dim, self.i_in2[j].dim, uvuv_i_out[k].dim
-    #         )
-    #         # print(cg)
-    #         unique_cg_mat[f"{ir_in1.l}_{ir_in2.l}_{ir_out.l}"] = cg
-
-    #         ## uvuv
-    #         for u, v in itertools.product(range(mul_in1), range(mul_in2)):
-    #             partial_mat_cg[
-    #                 u * ir_in1.dim : (u + 1) * ir_in1.dim,
-    #                 v * ir_in2.dim : (v + 1) * ir_in2.dim,
-    #                 (u * mul_in2 + v) * ir_out.dim : (u * mul_in2 + v + 1) * ir_out.dim,
-    #             ] = cg
-
-    #     # print("cg u partition")
-    #     # merged_groups = []
-    #     # set_indices = []
-
-    #     # # Convert each set to a list to work with mutable groups
-    #     # sets = [set(s) for s in unique_cg]
-    #     # indices = list(range(len(sets)))
-
-    #     # while sets:
-    #     #     # Sort sets by size to prioritize minimizing unique values
-    #     #     sets, indices = zip(*sorted(zip(sets, indices), key=lambda x: len(x[0]), reverse=True))
-    #     #     sets, indices = list(sets), list(indices)
-    #     #     merged = sets.pop(0)
-    #     #     merged_indices = [indices.pop(0)]
-
-    #     #     # Avoid modifying list size during iteration by using a copy
-    #     #     removable_indices = []
-    #     #     for i, other_set in enumerate(sets):
-    #     #         union = merged.union(other_set)
-    #     #         if len(union) < 256:
-    #     #             merged = union
-    #     #             merged_indices.append(indices[i])
-    #     #             removable_indices.append(i)
-
-    #     #     # Remove the marked indices after iteration
-    #     #     for index in sorted(removable_indices, reverse=True):
-    #     #         sets.pop(index)
-    #     #         indices.pop(index)
-
-    #     #     merged_groups.append(merged)
-    #     #     set_indices.append(merged_indices)
-
-    #     # # Minimize total unique values by flattening the groups
-    #     # print(merged_groups, set_indices)
-    #     # for e in merged_groups:
-    #     #     print(len(e))
-
-    #     # print(len(set(asdfasd)))
-
-    #     # exit()
-
-    #     return unique_cg, unique_cg_mat
 
     def cgmat2fiber(self, tp_inst_outorder, unique_cg_mat):
         per_path_fiber_start = [0]

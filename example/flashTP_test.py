@@ -8,13 +8,30 @@ _torch_scatter_exist = False
 try:
     # Please install torch-scatter if you want to 
     # reproduce the e3nn performance evaluation
-    # currently correctness check is possible with equivalent pytorch code
     from torch_scatter import scatter
     _torch_scatter_exist = True
 except ImportError:
     pass
 
-import re
+# =============================================================================
+# Command-line arguments (in order):
+#   1) filename (str)
+#        Path to the TensorProduct file for each model.
+#   2) layer_idx (int)
+#        Zero-based index of the layer you want to profile in the TensorProduct file.
+#   3) target_edge_cnt (int)
+#        Number of total edges for the run (e.g., 16384 for 16k, 32768 for 32k).
+#   4) used_dtype_str (str)
+#        Data type to use, as a string (e.g., 'fp32', 'fp64').
+#   5) run_cueq (str)
+#        Flag to select implementation:
+#          'true'  → run including CuEquivariance  
+#          'false' → only run e3nn and FlashTP
+#   6) channel_multiplier (int)
+#        Multiplier on hidden-channel width of input1 of selected TensorProduct
+#        For TensorProduct ("32x0e", "1x0e+1x1o+1x2e+1x3o") 
+#        with multiplier 2 => it will be ("64x0e", "1x0e+1x1o+1x2e+1x3o")
+# =============================================================================
 
 def main():
     seed = 1234
@@ -26,7 +43,7 @@ def main():
     
     filename = sys.argv[1]
     layer_idx = int(sys.argv[2])
-    target_batch_size = int(sys.argv[3]) # 16k, 32k
+    target_edge_cnt = int(sys.argv[3]) # 16k, 32k
     used_dtype_str = sys.argv[4]
     run_cueq = sys.argv[5]
     channel_multiplier = int(sys.argv[6])
@@ -40,9 +57,10 @@ def main():
     used_dtype = torch.float32
     if (used_dtype_str == "fp64"):
         used_dtype = torch.float64
-        
+    
+    # we generate random edges by selecting 64 neighbours for each node
     max_neighbour = 64
-    total_node = target_batch_size // max_neighbour
+    total_node = target_edge_cnt // max_neighbour
     edge_src, edge_dst = flashTP_e3nn.utils.fixed_generate_edgepair(total_node, max_neighbour)
 
     batch_size = len(edge_src)
@@ -53,13 +71,14 @@ def main():
 
     torch.set_default_dtype(used_dtype)
     tp = e3nn.o3.TensorProduct(i_in1,i_in2,i_out,inst_tuple,shared_weights=False, internal_weights=False) # path_normalization="none", normalization="none"
-    tp = tp.to(device="cuda")  
+    tp = tp.to(device="cuda")
     flashtp = flashTP_e3nn.uvu_TP(i_in1,i_in2,i_out,inst_tuple, device="cuda", dtype=used_dtype)
 
-    torch.set_default_dtype(torch.float32)
     if run_cueq:
         import cuequivariance_torch as cuet
         cuet_tp = cuet.ChannelWiseTensorProduct(*cueq_config[:-1], shared_weights=False,internal_weights=False, device="cuda", layout="ir_mul", dtype=used_dtype)
+    
+    torch.set_default_dtype(torch.float32)
 
     t_edge_src = torch.tensor(edge_src, device="cuda", dtype=torch.int32)
     t_edge_dst = torch.tensor(edge_dst, device="cuda", dtype=torch.int32)
@@ -88,7 +107,6 @@ def main():
             out_exp = scatter(out_large_exp, t_edge_dst.to(torch.int64), dim=0, dim_size=total_node, reduce="sum")
         else:
             out_exp = torch.zeros(total_node, out_large_exp.shape[1], dtype=out_large_exp.dtype, device=out_large_exp.device)
-            # scatter‐sum: for each i in [0..N), do y[dst[i], :] += x[i, :]
             out_exp.scatter_add_(
                 dim=0,
                 index=t_edge_dst.to(torch.int64).unsqueeze(1).expand(-1, out_large_exp.shape[1]),  # (N,1) -> (N,C)
@@ -134,7 +152,7 @@ def main():
 
 
         ## cueq 
-        ## Comparing correctness is possible but as the input/weight/output layout are all different it is challenging
+        ## Comparing correctness is possible but challenging as the some layouts are different
         if run_cueq:
             cin1_cuda = cin1_node_cuda[edge_src]
             cuet_out_exp = cuet_tp(cin1_cuda,cin2_cuda,weight_cueq)

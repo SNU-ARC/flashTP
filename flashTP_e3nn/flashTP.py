@@ -16,30 +16,28 @@ def uvu_TP(
     dtype=torch.float32,
 ):
     """
-    Wrapper function to create and return fused_tp_exp instance
+    Wrapper function to create and return different fused_uvu_TP instance
 
-    Args:
-        irreps_in1: First input irreps
-        irreps_in2: Second input irreps
-        irreps_out: Output irreps
-        instructions: Instruction tuple
-        block_batch_cnt: Number of block batches need to be list of 3 int []
-        if not set uses flashtp uses config from heruistic
-        device: Device to use (default: "cuda")
-        dtype: Data type to use (default: torch.float32)
+    Constructs and returns a `fused_uvu_TP` object for the TensorProduct.
 
-    Returns:
-        fused_tp_exp instance
+    Parameters
+    ----------
+    irreps_in1 : e3nn.o3.Irreps
+        Representation of the first irreps.
+    irreps_in2 : e3nn.o3.Irreps
+        Representation of the second irreps.
+    irreps_out : e3nn.o3.Irreps
+        Representation of the output irreps.
+    instructions : List[tuple]
+        Path used for the TensorProduct
+    block_batch_cnt : Sequence[int], optional
+        Three-element list `[B1, B2, B3]` specifying the number of blocks
+        processed per batch in each dimension (maximum of 32). If `None`, uses built-in
+        heuristics to choose block sizes.
+    device : str or torch.device, default="cuda"
+    dtype : torch.dtype, default=torch.float32
+        Data type for all internal tensors and kernels.
     """
-    # assert if ... =>
-    # ir_ out is greater than 512
-    # num_path > 512 => can be done during actual initalization
-
-    # need to check the number of unique cg matrix value first
-
-    # if out is larger than int16 64K => use out
-
-    # if number of uint8 is larger than
 
     # Supported TensorProduct options
     # irrep_normalization = "component"
@@ -48,7 +46,7 @@ def uvu_TP(
     # shared_weights = False
 
 
-    # create equivalent TP 
+    # create equivalent TP of e3nn
     tp = e3nn.o3.TensorProduct(
         irreps_in1,
         irreps_in2,
@@ -65,6 +63,8 @@ def uvu_TP(
     )
     unique_cg_val = list(set(unique_cg))
 
+    # if number of unique cg values is greater than 256,
+    # its index can't be stored in uint8 and handled by fused_uvu_TP_exp_opt_extcg
     if len(unique_cg_val) <= 256:
         if True:
             print("fused_uvu_TP_exp_opt_large")
@@ -97,7 +97,6 @@ def uvu_TP(
 def extract_cg_info(i_in1, i_in2, uvuv_i_out, instructions, dtype):
     unique_cg = []
     unique_cg_mat = {}
-    idx = 0
     for inst in instructions:
         i = inst.i_in1
         j = inst.i_in2
@@ -108,23 +107,14 @@ def extract_cg_info(i_in1, i_in2, uvuv_i_out, instructions, dtype):
         mul_out, ir_out = uvuv_i_out[k]
 
         cg = e3nn.o3.wigner_3j(ir_in1.l, ir_in2.l, ir_out.l)
-        idx += 1
-        # remove small difference in fp64 precision problem
-        # by converting it to fp32 then back to target dtype
+
+        # For fp64 there are small difference between same values due to floating point problem.
+        # This increase the number of unique values unnecessarily.
+        # We remove it by converting it to fp32 then back to target datatype
         cg_fp32 = cg.to(torch.float32)
         unique_cg += cg_fp32.unique().to(dtype).tolist()
 
-        partial_mat_cg = torch.zeros(
-            i_in1[i].dim, i_in2[j].dim, uvuv_i_out[k].dim
-        )
         unique_cg_mat[f"{ir_in1.l}_{ir_in2.l}_{ir_out.l}"] = cg
 
-        ## uvuv
-        for u, v in itertools.product(range(mul_in1), range(mul_in2)):
-            partial_mat_cg[
-                u * ir_in1.dim : (u + 1) * ir_in1.dim,
-                v * ir_in2.dim : (v + 1) * ir_in2.dim,
-                (u * mul_in2 + v) * ir_out.dim : (u * mul_in2 + v + 1) * ir_out.dim,
-            ] = cg
 
     return unique_cg, unique_cg_mat

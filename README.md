@@ -68,6 +68,7 @@ For detailed information on the input parameters, please refer to `./example/fla
 cd example
 bash ./test.sh
 ```
+For SevenNet integration please checkout [flash branch of SevenNet](https://github.com/MDIL-SNU/SevenNet/tree/flash).
 
 # Citation
 Please cite our paper if you find our work useful.

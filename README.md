@@ -62,7 +62,12 @@ out_ours = flashtp(in1,in2,weight, edge_src, edge_dst)
 ```
 
 # Evaluation
-TODO
+Run ./example/test.sh to run microbenchmarks in ./ir_config.
+For detailed information on the input parameters, please refer to `./example/flashTP_test.py`.
+```bash
+cd example
+bash ./test.sh
+```
 
 # Citation
 Please cite our paper if you find our work useful.

@@ -12,6 +12,10 @@ FlashTP implements fused, sparsity-aware CUDA kernels to accelerate the Tensor-P
 
 For full details on the optimizations, please see our ICML ’25 [paper](https://openreview.net/pdf?id=wiQe95BPaB).
 
+# TODO
+- [ ] **Performance Improvements** 
+- [ ] **JIT implemenation** 
+
 # Prerequisites
 - Python 3.11  
 - CUDA Toolkit 12 or higher  

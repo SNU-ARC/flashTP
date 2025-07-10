@@ -16,7 +16,7 @@ For full details on the optimizations, please see our ICML ’25 [paper](https:/
 - Python 3.11  
 - CUDA Toolkit 12 or higher  
 - PyTorch 2.4.1 or higher  
-- [e3nn](https://github.com/e3nn)  
+- [e3nn](https://github.com/e3nn/e3nn)  
 - [torch_scatter](https://github.com/rusty1s/pytorch_scatter) (for accurate _e3nn_ performance benchmarks)
 
 # Installation and features

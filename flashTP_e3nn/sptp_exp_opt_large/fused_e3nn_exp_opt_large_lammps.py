@@ -76,7 +76,7 @@ def find_optimal_abc(a, b, c, max_y=32):
     return max_x
 
 
-class fused_uvu_TP_exp_opt_large(torch.nn.Module):
+class fused_uvu_TP_exp_opt_large_lammps(torch.nn.Module):
     def __init__(
         self,
         i_in1,
@@ -211,7 +211,7 @@ class fused_uvu_TP_exp_opt_large(torch.nn.Module):
         # )
         # for testing Lammps integration
         # out = torch.ops.flashtp_large_lammps.sptp_linear_fwd_v2_shared_exp(in1, in2, weight, per_edge_src, per_edge_dst, *self.metadata_list, self.per_block_opt_batch, self.l_max, self.out_dim)
-        print(torch.ops.flashtp_large_kernel)
+        print(torch.ops.flashtp_large_kernel_lammps)
 
         out = torch.ops.flashtp_large_kernel_lammps.sptp_linear_fwd_v2_shared_exp(
             in1,
@@ -472,4 +472,4 @@ class fused_uvu_TP_exp_opt_large(torch.nn.Module):
         ]
 
 
-__all__ = ["fused_uvu_TP_exp_opt_large"]
+__all__ = ["fused_uvu_TP_exp_opt_large_lammps"]

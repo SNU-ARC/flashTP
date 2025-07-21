@@ -3,6 +3,7 @@ import e3nn
 import itertools
 
 from .sptp_exp_opt_large.fused_e3nn_exp_opt_large import fused_uvu_TP_exp_opt_large
+from .sptp_exp_opt_large.fused_e3nn_exp_opt_large_lammps import fused_uvu_TP_exp_opt_large_lammps
 from .sptp_exp_opt_extcg.fused_e3nn_exp_opt_extcg import fused_uvu_TP_exp_opt_extcg
 
 
@@ -14,6 +15,7 @@ def uvu_TP(
     block_batch_cnt=None,
     device="cuda",
     dtype=torch.float32,
+    use_lammps=False
 ):
     """
     Wrapper function to create and return different fused_uvu_TP instance
@@ -37,6 +39,7 @@ def uvu_TP(
     device : str or torch.device, default="cuda"
     dtype : torch.dtype, default=torch.float32
         Data type for all internal tensors and kernels.
+    use_lammps : when using lammps it uses .so file that includes C++ side torch registration (only registered forward and backward for inference)
     """
 
     # Supported TensorProduct options
@@ -66,7 +69,20 @@ def uvu_TP(
     # if number of unique cg values is greater than 256,
     # its index can't be stored in uint8 and handled by fused_uvu_TP_exp_opt_extcg
     if len(unique_cg_val) <= 256:
-        if True:
+        if use_lammps:
+            print("fused_uvu_TP_exp_opt_large_lammps")
+            return fused_uvu_TP_exp_opt_large_lammps(
+                i_in1=irreps_in1,
+                i_in2=irreps_in2,
+                i_out=irreps_out,
+                instructions=tp.instructions,
+                unique_cg_mat=unique_cg_mat,
+                unique_cg_val = unique_cg_val,
+                per_block_batch=block_batch_cnt,
+                device=device,
+                dtype=dtype
+            )
+        else:
             print("fused_uvu_TP_exp_opt_large")
             return fused_uvu_TP_exp_opt_large(
                 i_in1=irreps_in1,

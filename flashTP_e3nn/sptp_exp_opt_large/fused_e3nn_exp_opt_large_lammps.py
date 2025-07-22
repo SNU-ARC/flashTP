@@ -4,6 +4,8 @@ from typing import Tuple
 
 import torch
 
+import flashTP_e3nn.flashtp_large_kernel_lammps as flashtp_large_kernel_lammps
+
 # flashtp_large_kernel = None
 
 
@@ -206,9 +208,6 @@ class fused_uvu_TP_exp_opt_large_lammps(torch.nn.Module):
         # )
         # for testing Lammps integration
         # out = torch.ops.flashtp_large_lammps.sptp_linear_fwd_v2_shared_exp(in1, in2, weight, per_edge_src, per_edge_dst, *self.metadata_list, self.per_block_opt_batch, self.l_max, self.out_dim)
-
-        # err mse: python value of type '_OpNamespace' cannot be used as a value. Perhaps it is a closed over global variable? If so, please consider passing it in as an argument or use a local varible instead.
-        #print(torch.ops.flashtp_large_kernel_lammps)
 
         out = torch.ops.flashtp_large_kernel_lammps.sptp_linear_fwd_v2_shared_exp(
             in1,

@@ -17,7 +17,7 @@ For full details on the optimizations, please see our ICML ’25 [paper](https:/
 - [ ] **JIT implemenation** 
 
 # Prerequisites
-- Python 3.11  
+- Python 3.11 (Not a strict requirement)
 - CUDA Toolkit 12 or higher  
 - PyTorch 2.4.1 or higher  
 - [e3nn](https://github.com/e3nn/e3nn)  
@@ -30,12 +30,14 @@ For full details on the optimizations, please see our ICML ’25 [paper](https:/
    cd flashTP
    ```
 2. Ensure CUDA toolkit 12 or higher is installed on your system.
-3. Install the Python dependencies and the package itself: 
+3. Install the Python dependencies and the package itself: (can take upto 10 mins, due to compiliation)
    ```bash
    pip install -r requirements.txt
-   pip install . --no-build-isolation
+   #You can set CUDA_ARCH_LIST for your GPU, by default it generates code for A100 and H100 GPUs
+   CUDA_ARCH_LIST="80;90" pip install . --no-build-isolation 
    ```
-   We recommend using Python 3.11 with either Virtualenv or Conda to manage the dependencies.
+   We recommend using Virtualenv or Conda to manage the dependencies.
+   
 
 # How to use FlashTP
 ## Standard `e3nn` TensorProduct 

@@ -740,6 +740,7 @@ class fused_uvu_TP_exp_opt_extcg(torch.nn.Module):
         unique_cg_val,
         warpsize=32,
         per_block_batch=None,
+        smem_size=None,
         device="cuda",
         dtype=torch.float32,
     ):
@@ -788,14 +789,18 @@ class fused_uvu_TP_exp_opt_extcg(torch.nn.Module):
         perwarp_in2_size = in2_size
         if in2_size % 2 == 0:
             perwarp_in2_size = in2_size + 1
-        gpu_name = torch.cuda.get_device_name()
-        if "A100" in gpu_name:
-            SMEM_SIZE = 163
-        elif "H100" in gpu_name:
-            SMEM_SIZE = 227
+
+        if(smem_size is None):
+            gpu_name = torch.cuda.get_device_name()
+            if "A100" in gpu_name:
+                SMEM_SIZE = 163
+            elif "H100" in gpu_name:
+                SMEM_SIZE = 227
+            else:
+                print("Need to tune SMEM_SIZE, using safe mode of SMEM_SIZE=48KB")
+                SMEM_SIZE = 48
         else:
-            print("Need to tune SMEM_SIZE, using safe mode of SMEM_SIZE=48KB")
-            SMEM_SIZE = 47
+            SMEM_SIZE = smem_size
         print("SMEM_SIZE", SMEM_SIZE)
 
         print("max_fiber_size", self.metadata_list[-2])

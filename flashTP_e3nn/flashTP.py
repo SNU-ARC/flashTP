@@ -13,6 +13,7 @@ def uvu_TP(
     irreps_out,
     instructions,
     block_batch_cnt=None,
+    smem_size = None,
     device="cuda",
     dtype=torch.float32,
     use_lammps=False
@@ -36,6 +37,11 @@ def uvu_TP(
         Three-element list `[B1, B2, B3]` specifying the number of blocks
         processed per batch in each dimension (maximum of 32). If `None`, uses built-in
         heuristics to choose block sizes.
+    smem_size : int, optional
+        Shared memory size in KiBs. 
+        If `None`, it uses built-in value which is 163KiBs (A100), 227KiBs (H100), 48KiBs (Default).
+        https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications-technical-specifications-per-compute-capability
+        view this link for shared memory size for different GPUs.
     device : str or torch.device, default="cuda"
     dtype : torch.dtype, default=torch.float32
         Data type for all internal tensors and kernels.
@@ -79,6 +85,7 @@ def uvu_TP(
                 unique_cg_mat=unique_cg_mat,
                 unique_cg_val = unique_cg_val,
                 per_block_batch=block_batch_cnt,
+                smem_size=smem_size,
                 device=device,
                 dtype=dtype
             )
@@ -92,6 +99,7 @@ def uvu_TP(
                 unique_cg_mat=unique_cg_mat,
                 unique_cg_val = unique_cg_val,
                 per_block_batch=block_batch_cnt,
+                smem_size=smem_size,
                 device=device,
                 dtype=dtype
             )
@@ -105,6 +113,7 @@ def uvu_TP(
             unique_cg_mat=unique_cg_mat,
             unique_cg_val = unique_cg_val,
             per_block_batch=block_batch_cnt,
+            smem_size=smem_size,
             device=device,
             dtype=dtype
         )

@@ -1,10 +1,8 @@
-import os
+import math
 import itertools
-from typing import List, Tuple
+from typing import Tuple
 
-import e3nn
 import torch
-from torch.utils.cpp_extension import load
 
 import flashTP_e3nn.flashtp_large_kernel_lammps as flashtp_large_kernel_lammps
 
@@ -49,7 +47,6 @@ def find_optimal_yz(x, max_y=32):
     return best_y, best_z
 
 
-import math
 
 def find_optimal_abc(a, b, c, max_y=32):
     # Start from the maximum allowed threads per block and decrease
@@ -216,8 +213,6 @@ class fused_uvu_TP_exp_opt_large_lammps(torch.nn.Module):
         # )
         # for testing Lammps integration
         # out = torch.ops.flashtp_large_lammps.sptp_linear_fwd_v2_shared_exp(in1, in2, weight, per_edge_src, per_edge_dst, *self.metadata_list, self.per_block_opt_batch, self.l_max, self.out_dim)
-        # print(flashtp_large_kernel_lammps)
-        # print(torch.ops.flashtp_large_kernel_lammps)
 
         out = torch.ops.flashtp_large_kernel_lammps.sptp_linear_fwd_v2_shared_exp(
             in1,

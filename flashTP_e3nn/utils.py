@@ -21,10 +21,10 @@ def compare(a, b):
     anything_bad = False
     for pos in diff_pos:
         pos_t = [x for x in pos]
-        if(abs(a[pos_t] - b[pos_t]) > 1e-4):
+        if(abs(a[tuple(pos_t)] - b[tuple(pos_t)]) > 1e-4):
             anything_bad = True
             print(pos)
-            print(a[pos_t] - b[pos_t] )
+            print(a[tuple(pos_t)] - b[tuple(pos_t)])
     if(not anything_bad):
         print("All Good")
 

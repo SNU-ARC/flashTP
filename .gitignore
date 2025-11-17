@@ -15,3 +15,4 @@ dump/state_dict.pt
 flashTP_e3nn.egg-info/*
 /out.txt
 *.so
+build/

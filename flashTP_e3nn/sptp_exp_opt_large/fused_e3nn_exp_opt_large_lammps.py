@@ -9,7 +9,8 @@ from torch.utils.cpp_extension import load
 import flashTP_e3nn.flashtp_large_kernel_lammps as flashtp_large_kernel_lammps
 
 # flashtp_large_kernel = None
-
+import logging
+logger = logging.getLogger(__name__)
 
 def kernel_init():
     # global flashtp_large_kernel
@@ -163,12 +164,12 @@ class fused_uvu_TP_exp_opt_large_lammps(torch.nn.Module):
             elif "H100" in gpu_name:
                 SMEM_SIZE = 227
             else:
-                print("Need to tune SMEM_SIZE, using safe mode of SMEM_SIZE=48KB")
+                logger.warning("Need to tune SMEM_SIZE, using safe mode of SMEM_SIZE=48KB")
                 SMEM_SIZE = 48
         else:
             SMEM_SIZE = smem_size
 
-        print("SMEM_SIZE", SMEM_SIZE)
+        logger.info(f"SMEM_SIZE set to {SMEM_SIZE} KB")
 
         self.out_dim = self.i_out.dim
         in2_size = i_in2.dim
@@ -205,7 +206,7 @@ class fused_uvu_TP_exp_opt_large_lammps(torch.nn.Module):
                                     bwd_bwd_per_block_opt_batch]
 
 
-        print("using per_block_batch ", self.per_block_batch)
+        logger.info(f"Using per_block_batch of {self.per_block_batch}")
 
 
     def forward(self, in1, in2, weight, per_edge_src, per_edge_dst):

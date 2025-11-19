@@ -22,7 +22,7 @@ def make_gencode_flags(arch_list):
 CUDA_ARCH_LIST = os.environ.get("CUDA_ARCH_LIST", "80;90")
 NVCC_GENCODE_FLAGS = make_gencode_flags(CUDA_ARCH_LIST)
 
-print(NVCC_GENCODE_FLAGS)
+# print(NVCC_GENCODE_FLAGS)
 
 
 # common nvcc flags
@@ -135,17 +135,17 @@ class CustomBuildExt(BuildExtension):
     def build_extensions(self):
         # self.build_lib is the real build output dir
         pkg_build = os.path.join(self.build_lib, "flashTP_e3nn")
-        print("pkg_build", pkg_build)
+        # print("pkg_build", pkg_build)
 
         for ext in self.extensions:
-            print("ext.name", ext.name)
+            # print("ext.name", ext.name)
             if ext.name == "flashTP_e3nn.flashtp_large_core":
                 self.core_so = str(self.get_ext_filename(ext.name)).split("/")[-1]
-                print("core.so", self.core_so)
+                # print("core.so", self.core_so)
             else:
                 # only fix the ones that need to see the core.so
                 if ext.name in ["flashTP_e3nn.flashtp_large_kernel", "flashTP_e3nn.flashtp_large_kernel_lammps"]:
-                    print("need core", ext.name)
+                    # print("need core", ext.name)
                     ext.library_dirs.append(str(pkg_build))
                     ext.libraries.append(f":{self.core_so}")
                     

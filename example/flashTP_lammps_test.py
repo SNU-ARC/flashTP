@@ -12,6 +12,9 @@ try:
     _torch_scatter_exist = True
 except ImportError:
     pass
+import logging
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # Command-line arguments (in order):

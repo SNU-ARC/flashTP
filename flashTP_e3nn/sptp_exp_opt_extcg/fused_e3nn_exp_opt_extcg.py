@@ -9,6 +9,8 @@ from torch.utils.cpp_extension import load
 import flashTP_e3nn.flashtp_extcg_kernel  as flashtp_extcg_kernel
 
 # flashtp_extcg_kernel = None
+import logging
+logger = logging.getLogger(__name__)
 
 def kernel_init():
     # global flashtp_extcg_kernel
@@ -797,13 +799,12 @@ class fused_uvu_TP_exp_opt_extcg(torch.nn.Module):
             elif "H100" in gpu_name:
                 SMEM_SIZE = 227
             else:
-                print("Need to tune SMEM_SIZE, using safe mode of SMEM_SIZE=48KB")
+                logger.warning("Need to tune SMEM_SIZE, using safe mode of SMEM_SIZE=48KB")
                 SMEM_SIZE = 48
         else:
             SMEM_SIZE = smem_size
-        print("SMEM_SIZE", SMEM_SIZE)
-
-        print("max_fiber_size", self.metadata_list[-2])
+        logger.info(f"SMEM_SIZE set to {SMEM_SIZE} KB")
+        # print("max_fiber_size", self.metadata_list[-2])
         max_fiber_size = self.metadata_list[-2]
 
         if (self.per_block_batch == None):
@@ -832,7 +833,7 @@ class fused_uvu_TP_exp_opt_extcg(torch.nn.Module):
 
 
 
-        print("using per_block_batch ", self.per_block_batch)
+        logger.info(f"Using per_block_batch of {self.per_block_batch}")
         # exit()
 
     def forward(self, in1, in2, weight, per_edge_src, per_edge_dst):

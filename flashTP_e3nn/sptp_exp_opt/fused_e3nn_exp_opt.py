@@ -6,9 +6,11 @@ import e3nn
 import torch
 from torch.utils.cpp_extension import load
 from torch_scatter import scatter
+import logging
 
 
 flashtp_kernel = None
+logger = logging.getLogger(__name__)
 
 
 # lazy compile
@@ -756,15 +758,14 @@ class fused_uvu_TP_exp_opt(torch.nn.Module):
         elif "H100" in gpu_name:
             SMEM_SIZE = 227
         else:
-            print("Need to tune SMEM_SIZE, using safe mode of SMEM_SIZE=48KB")
-            SMEM_SIZE = 47
-        print("SMEM_SIZE", SMEM_SIZE)
+            logger.warning("Need to tune SMEM_SIZE, using safe mode of SMEM_SIZE=48KB")
+            SMEM_SIZE = 48
+        logger.info(f"SMEM_SIZE set to {SMEM_SIZE} KB")
 
         perwarp_in2_size = in2_size
         if in2_size % 2 == 0:
             perwarp_in2_size = in2_size + 1
 
-        print("fiber_array", self.metadata_list[-3].numel())
         fiber_array_length = self.metadata_list[-3].numel()
         fwd_per_block_opt_batch = (SMEM_SIZE * 1024) // (
             d_size * (WARPSIZE * (max_ir_dim * 3) + perwarp_in2_size)
@@ -821,7 +822,7 @@ class fused_uvu_TP_exp_opt(torch.nn.Module):
         # else:
         #     self.per_block_opt_batch.append(bwd_bwd_per_block_opt_batch)
 
-        print("using per_block_batch ", self.per_block_opt_batch)
+        logger.info(f"Using per_block_batch of {self.per_block_opt_batch}")
         # exit()
 
     def forward(self, in1, in2, weight, per_edge_src, per_edge_dst):

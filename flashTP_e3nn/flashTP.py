@@ -1,11 +1,12 @@
 import torch
 import e3nn
-import itertools
+import logging
 
 from .sptp_exp_opt_large.fused_e3nn_exp_opt_large import fused_uvu_TP_exp_opt_large
 from .sptp_exp_opt_large.fused_e3nn_exp_opt_large_lammps import fused_uvu_TP_exp_opt_large_lammps
 from .sptp_exp_opt_extcg.fused_e3nn_exp_opt_extcg import fused_uvu_TP_exp_opt_extcg
 
+logger = logging.getLogger(__name__)
 
 def uvu_TP(
     irreps_in1,
@@ -76,7 +77,7 @@ def uvu_TP(
     # its index can't be stored in uint8 and handled by fused_uvu_TP_exp_opt_extcg
     if len(unique_cg_val) <= 256:
         if use_lammps:
-            print("fused_uvu_TP_exp_opt_large_lammps")
+            logger.info("Using fused_uvu_TP_exp_opt_large_lammps")
             return fused_uvu_TP_exp_opt_large_lammps(
                 i_in1=irreps_in1,
                 i_in2=irreps_in2,
@@ -90,7 +91,7 @@ def uvu_TP(
                 dtype=dtype
             )
         else:
-            print("fused_uvu_TP_exp_opt_large")
+            logger.info("Using fused_uvu_TP_exp_opt_large")
             return fused_uvu_TP_exp_opt_large(
                 i_in1=irreps_in1,
                 i_in2=irreps_in2,
@@ -104,7 +105,7 @@ def uvu_TP(
                 dtype=dtype
             )
     else:
-        print("fused_uvu_TP_exp_opt_extcg")
+        logger.info("Using fused_uvu_TP_exp_opt_extcg")
         return fused_uvu_TP_exp_opt_extcg(
             i_in1=irreps_in1,
             i_in2=irreps_in2,

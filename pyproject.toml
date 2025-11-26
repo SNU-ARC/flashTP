@@ -1,13 +1,15 @@
 [project]
 name = "flashTP_e3nn"
-version = "0.1.0"
-description = ""
+version = "0.1.1"
+description = "Torch-native C++/CUDA library to accelerate tensor-product layers in MLIPs"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "torch>=2.4.1",
     "e3nn"
 ]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
 
 [build-system]
 requires = ["setuptools>=61", "wheel", "torch>=2.4.1","ninja"]

@@ -19,7 +19,7 @@ def make_gencode_flags(arch_list):
         ])
     return flags
 
-CUDA_ARCH_LIST = os.environ.get("CUDA_ARCH_LIST", "80;90")
+CUDA_ARCH_LIST = os.environ.get("CUDA_ARCH_LIST", "70;75;80;86;90")
 NVCC_GENCODE_FLAGS = make_gencode_flags(CUDA_ARCH_LIST)
 
 # print(NVCC_GENCODE_FLAGS)
@@ -194,7 +194,7 @@ class CustomDevelop(_develop):
 
 setup(
     name="flashTP_e3nn",
-    version="0.1.0",
+    version="0.1.1",
     python_requires=">=3.10",
     packages=find_packages(include=["flashTP_e3nn*"], exclude=["example*"]),
     install_requires=[

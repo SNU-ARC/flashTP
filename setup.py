@@ -15,7 +15,7 @@ def make_gencode_flags(arch_list):
     for arch in arch_list.replace(";", " ").split():
         flags.extend([
             f"-gencode=arch=compute_{arch},code=sm_{arch}",
-            # f"-gencode=arch=compute_{arch},code=compute_{arch}",  # PTX fallback
+            f"-gencode=arch=compute_{arch},code=compute_{arch}",  # PTX fallback
         ])
     return flags
 

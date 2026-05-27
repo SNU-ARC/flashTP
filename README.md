@@ -32,14 +32,21 @@ For full details on the optimizations, please see our ICML ’25 [paper](https:/
 2. Ensure CUDA toolkit 12 or higher is installed on your system.
 3. Install the Python dependencies and the package itself: (Compiling the CUDA kernels can take **up to 10 minutes**)
    
-   By default, builds optimized kernels for NVIDIA A100 and H100 GPUs.
+   By default, the build **auto-detects the Compute Capability of the GPU(s) on your machine and compiles optimized kernels for them**.
    
-   You can customize `CUDA_ARCH_LIST` to match the Compute Capability of your NVIDIA GPU.
+   You can override auto-detection by setting CUDA_ARCH_LIST to match the Compute Capability of your target GPU(s).
+   If no GPU is detected at build time (e.g., on a headless login node), it falls back to compiling for NVIDIA A100 (sm_80) and H100 (sm_90).
+   In all cases, a PTX fallback is embedded for the highest compiled architecture, so the package will also run on newer GPUs (e.g., Blackwell) via JIT compilation — though for peak performance on those, a reinstallation is recommended.
    Please view [this link](https://developer.nvidia.com/cuda-gpus) for Compute Capability.
      
    ```bash
    pip install -r requirements.txt
-   CUDA_ARCH_LIST="80;90" pip install . --no-build-isolation 
+   # Option 1: auto-detect (recommended on a machine with the target GPU)
+   pip install . --no-build-isolation
+
+   # Option 2: specify architectures manually
+   CUDA_ARCH_LIST="80;90" pip install . --no-build-isolation
+ 
    ```
    We recommend using Virtualenv or Conda to manage the dependencies.
    

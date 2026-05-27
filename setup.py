@@ -3,24 +3,44 @@ import os, glob
 from setuptools import setup, find_packages
 from torch.utils.cpp_extension import CUDAExtension, BuildExtension
 from setuptools.command.develop import develop as _develop
+import torch.cuda
 
-# Optionally drive arch flags via env:
-# os.environ["TORCH_CUDA_ARCH_LIST"] = "5.0;6.0;7.0;7.5;8.0;8.6"
+def get_arch_list():
+    # if defiend by user.
+    if env := os.environ.get("CUDA_ARCH_LIST"):
+        return env
+    print("CUDA_ARCH_LIST not defined, auto-detecting archs from available GPUs...")
+    # if not defined get archs from all GPUs
+    if torch.cuda.is_available():
+        archs = sorted({
+            f"{torch.cuda.get_device_capability(i)[0]}{torch.cuda.get_device_capability(i)[1]}"
+            for i in range(torch.cuda.device_count())
+        })
+        if archs:
+            print("Detected GPU architectures:", ", ".join(archs))
+            return ";".join(archs)
+    # fallback
+    print("No GPUs detected, defaulting to CUDA_ARCH_LIST=80;90")
+    return "80;90"
 
 
 def make_gencode_flags(arch_list):
-    """Given "75 86", returns a flat list of NVCC -gencode flags."""
-    flags = []
-    # split on whitespace or semicolons
-    for arch in arch_list.replace(";", " ").split():
-        flags.extend([
-            f"-gencode=arch=compute_{arch},code=sm_{arch}",
-            f"-gencode=arch=compute_{arch},code=compute_{arch}",  # PTX fallback
-        ])
+    """Given "75 86" returns a flat list of NVCC -gencode flags.
+    SASS is emitted for every arch; PTX fallback is added only on the highest arch."""
+    archs = [a 
+        for a in arch_list.replace(";", " ").replace(",", " ").split()
+    ]
+    if not archs:
+        return []
+    flags = [f"-gencode=arch=compute_{a},code=sm_{a}" for a in archs]
+    highest = max(archs, key=int)
+    flags.append(f"-gencode=arch=compute_{highest},code=compute_{highest}") # PTX fallback
     return flags
 
-CUDA_ARCH_LIST = os.environ.get("CUDA_ARCH_LIST", "80;90")
+
+CUDA_ARCH_LIST = get_arch_list()
 NVCC_GENCODE_FLAGS = make_gencode_flags(CUDA_ARCH_LIST)
+
 
 # print(NVCC_GENCODE_FLAGS)
 
@@ -194,7 +214,7 @@ class CustomDevelop(_develop):
 
 setup(
     name="flashTP_e3nn",
-    version="0.1.0",
+    version="0.1.1",
     python_requires=">=3.10",
     packages=find_packages(include=["flashTP_e3nn*"], exclude=["example*"]),
     install_requires=[

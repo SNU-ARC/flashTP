@@ -6,6 +6,7 @@ import e3nn
 import torch
 from torch.utils.cpp_extension import load
 from torch_scatter import scatter
+from flashTP_e3nn.utils import get_default_smem_size_kb
 import logging
 
 
@@ -752,14 +753,7 @@ class fused_uvu_TP_exp_opt(torch.nn.Module):
         max_ir_dim = self.l_max * 2 + 1
         in2_size = i_in2.dim
         WARPSIZE = 32
-        gpu_name = torch.cuda.get_device_name()
-        if "A100" in gpu_name:
-            SMEM_SIZE = 163
-        elif "H100" in gpu_name:
-            SMEM_SIZE = 227
-        else:
-            logger.warning("Need to tune SMEM_SIZE, using safe mode of SMEM_SIZE=48KB")
-            SMEM_SIZE = 48
+        SMEM_SIZE = get_default_smem_size_kb()
         logger.info(f"SMEM_SIZE set to {SMEM_SIZE} KB")
 
         perwarp_in2_size = in2_size

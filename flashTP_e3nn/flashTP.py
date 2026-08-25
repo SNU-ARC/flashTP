@@ -39,9 +39,11 @@ def uvu_TP(
         processed per batch in each dimension (maximum of 32). If `None`, uses built-in
         heuristics to choose block sizes.
     smem_size : int, optional
-        Shared memory size in KiBs. 
-        If `None`, it uses built-in value which is 163KiBs (A100), 227KiBs (H100), 48KiBs (Default).
-        https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications-technical-specifications-per-compute-capability
+        Shared memory size in KiBs.
+        If `None`, it is derived from the GPU's compute capability, e.g.
+        163KiBs (A100), 227KiBs (H100/B200), falling back to 48KiBs for
+        unknown architectures.
+        https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/compute-capabilities.html#features-and-technical-specifications
         view this link for shared memory size for different GPUs.
     device : str or torch.device, default="cuda"
     dtype : torch.dtype, default=torch.float32

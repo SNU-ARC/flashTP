@@ -1,6 +1,7 @@
 import torch
 import e3nn.o3
 import json
+import logging
 import random
 
 _cueq_ava = False
@@ -9,6 +10,28 @@ try:
     _cueq_ava = True
 except ImportError:
     pass
+
+logger = logging.getLogger(__name__)
+
+# https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/compute-capabilities.html#features-and-technical-specifications
+def get_default_smem_size_kb():
+    match torch.cuda.get_device_capability():
+        case (7, 5):
+            return 64
+        case (7, _):
+            return 96
+        case (8, 0) | (8, 7):
+            return 163
+        case (8, _) | (12, _):
+            return 99
+        case (9 | 10 | 11, _):
+            return 227
+        case (major, minor):
+            logger.warning(
+                f"Unknown compute capability {major}.{minor}, "
+                "need to tune SMEM_SIZE; using safe mode of SMEM_SIZE=48KB"
+            )
+            return 48
 
 def mul_Irreps(mul, i_in):
     dd = []

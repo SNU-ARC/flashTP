@@ -1,3 +1,5 @@
+#include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAGuard.h>
 #include "sptp_exp_opt.hpp"
 #include <cmath>
 
@@ -350,19 +352,21 @@ void bwd_bwd_sptp_linear_cuda_v2_shared_exp(
     dim3 block(WARPSIZE, per_block_batch);
 
     // setup constant memory 
-    cudaMemcpyToSymbol(in1_idxing, t_in1_idxing.data<int>(), at::numel(t_in1_idxing)*sizeof(int)); // int , MAX_IN1_IR_CNT
-    cudaMemcpyToSymbol(in1_ival, t_in1_ival.data<int>(),  at::numel(t_in1_ival)*sizeof(int)); // int , MAX_IN1_IR_CNT
-    cudaMemcpyToSymbol(in1_related_path_idx, t_in1_related_path_idx.data<int>(), at::numel(t_in1_related_path_idx)*sizeof(int)); // int  , MAX_IN1_IR_CNT
+    // launch on in1's device, whatever the current device is
+    const at::cuda::OptionalCUDAGuard device_guard(at::device_of(in1));
+    cudaMemcpyToSymbolAsync(in1_idxing, t_in1_idxing.data<int>(), at::numel(t_in1_idxing)*sizeof(int), 0, cudaMemcpyDefault, at::cuda::getCurrentCUDAStream()); // int , MAX_IN1_IR_CNT
+    cudaMemcpyToSymbolAsync(in1_ival, t_in1_ival.data<int>(),  at::numel(t_in1_ival)*sizeof(int), 0, cudaMemcpyDefault, at::cuda::getCurrentCUDAStream()); // int , MAX_IN1_IR_CNT
+    cudaMemcpyToSymbolAsync(in1_related_path_idx, t_in1_related_path_idx.data<int>(), at::numel(t_in1_related_path_idx)*sizeof(int), 0, cudaMemcpyDefault, at::cuda::getCurrentCUDAStream()); // int  , MAX_IN1_IR_CNT
     
-    cudaMemcpyToSymbol(path_array1, t_path_array1.data<u_int>(), at::numel(t_path_array1)*sizeof(u_int) ); // ushort2, MAX_NUM_PATH
-    cudaMemcpyToSymbol(path_array2, t_path_array2.data<u_char>(), at::numel(t_path_array2)*sizeof(u_char)); // uchar4, MAX_NUM_PAT
-    cudaMemcpyToSymbol(per_path_fiber_start, t_per_path_fiber_start.data<u_short>(), at::numel(t_per_path_fiber_start)*sizeof(u_short)); // ushort2, MAX_NUM_PATH
-    cudaMemcpyToSymbol(path_weight, t_path_weight.data<float>(), at::numel(t_path_weight)*sizeof(float)); // float, MAX_NUM_PATH
-    cudaMemcpyToSymbol(per_path_weight_pos, t_per_path_weight_pos.data<int>(), at::numel(t_per_path_weight_pos)*sizeof(int)); // int , MAX_NUM_PATH
+    cudaMemcpyToSymbolAsync(path_array1, t_path_array1.data<u_int>(), at::numel(t_path_array1)*sizeof(u_int) , 0, cudaMemcpyDefault, at::cuda::getCurrentCUDAStream()); // ushort2, MAX_NUM_PATH
+    cudaMemcpyToSymbolAsync(path_array2, t_path_array2.data<u_char>(), at::numel(t_path_array2)*sizeof(u_char), 0, cudaMemcpyDefault, at::cuda::getCurrentCUDAStream()); // uchar4, MAX_NUM_PAT
+    cudaMemcpyToSymbolAsync(per_path_fiber_start, t_per_path_fiber_start.data<u_short>(), at::numel(t_per_path_fiber_start)*sizeof(u_short), 0, cudaMemcpyDefault, at::cuda::getCurrentCUDAStream()); // ushort2, MAX_NUM_PATH
+    cudaMemcpyToSymbolAsync(path_weight, t_path_weight.data<float>(), at::numel(t_path_weight)*sizeof(float), 0, cudaMemcpyDefault, at::cuda::getCurrentCUDAStream()); // float, MAX_NUM_PATH
+    cudaMemcpyToSymbolAsync(per_path_weight_pos, t_per_path_weight_pos.data<int>(), at::numel(t_per_path_weight_pos)*sizeof(int), 0, cudaMemcpyDefault, at::cuda::getCurrentCUDAStream()); // int , MAX_NUM_PATH
     // cudaMemcpyToSymbol(cg_idx_array, t_cg_idx_array.data<u_short>(), at::numel(t_cg_idx_array)*sizeof(u_short)); // u_short, MAX_U_FIBER_CNT 
 
     // cudaMemcpyToSymbol(fiber_array, t_fiber_array.data<u_char>(), at::numel(t_fiber_array)*sizeof(u_char)); // u_char4), MAX_U_FIBER_CNT 
-    cudaMemcpyToSymbol(unique_cg_val, t_unique_cg_val.data<float>(), at::numel(t_unique_cg_val)*sizeof(float) ); // float , MAX_U_CG_VAL_CNT
+    cudaMemcpyToSymbolAsync(unique_cg_val, t_unique_cg_val.data<float>(), at::numel(t_unique_cg_val)*sizeof(float) , 0, cudaMemcpyDefault, at::cuda::getCurrentCUDAStream()); // float , MAX_U_CG_VAL_CNT
 
     const int shared_memory_bytes = sizeof(float) * per_block_batch * (WARPSIZE * (max_ir_dim*7+perwarp_in2_size) + in2_size*2) + sizeof(u_char) * max_fiber_size * 4 + sizeof(u_short) * max_fiber_size;
 
@@ -375,7 +379,7 @@ void bwd_bwd_sptp_linear_cuda_v2_shared_exp(
         bwd_bwd_sptp_lienar_kernel_v2_shared_exp<float>,
         cudaFuncAttributeMaxDynamicSharedMemorySize, shared_memory_bytes));
 
-    bwd_bwd_sptp_lienar_kernel_v2_shared_exp<float><<<grid, block, shared_memory_bytes>>>(
+    bwd_bwd_sptp_lienar_kernel_v2_shared_exp<float><<<grid, block, shared_memory_bytes, at::cuda::getCurrentCUDAStream()>>>(
         mem_dF_din1.data<float>(),
         mem_dF_din2.data<float>(),
         mem_dF_dW.data<float>(),

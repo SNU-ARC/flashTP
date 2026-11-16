@@ -1,4 +1,5 @@
 #include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAGuard.h>
 #include "sptp_exp_opt.hpp"
 #include <cmath>
 
@@ -351,6 +352,8 @@ void bwd_bwd_sptp_linear_cuda_v2_shared_exp(
     dim3 block(WARPSIZE, per_block_batch);
 
     // setup constant memory 
+    // launch on in1's device, whatever the current device is
+    const at::cuda::OptionalCUDAGuard device_guard(at::device_of(in1));
     cudaMemcpyToSymbolAsync(in1_idxing, t_in1_idxing.data<int>(), at::numel(t_in1_idxing)*sizeof(int), 0, cudaMemcpyDefault, at::cuda::getCurrentCUDAStream()); // int , MAX_IN1_IR_CNT
     cudaMemcpyToSymbolAsync(in1_ival, t_in1_ival.data<int>(),  at::numel(t_in1_ival)*sizeof(int), 0, cudaMemcpyDefault, at::cuda::getCurrentCUDAStream()); // int , MAX_IN1_IR_CNT
     cudaMemcpyToSymbolAsync(in1_related_path_idx, t_in1_related_path_idx.data<int>(), at::numel(t_in1_related_path_idx)*sizeof(int), 0, cudaMemcpyDefault, at::cuda::getCurrentCUDAStream()); // int  , MAX_IN1_IR_CNT

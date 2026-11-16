@@ -8,17 +8,18 @@ Each test runs in its own process, so a crash in one does not hide the others, a
   compile     torch.compile(mode="reduce-overhead"), which uses CUDA graphs internally
   graph_f64   graph2 in float64, with d(out)/dx of each layer, replayed twice on new inputs
   graph_dd    second derivatives (through a force-like loss) in a CUDA graph, float32 and float64, replayed twice
+  device      (2 GPUs) module and inputs on cuda:1 while the current device is cuda:0
 
 The layers use l <= 2, so they run the sptp_exp_opt_large forward, backward and double-backward kernels,
 in float32 and float64.
 
-usage: python tests/test_stream_safety.py [all|eager|sidestream|graph1|graph2|compile|graph_f64|graph_dd]
+usage: python tests/test_stream_safety.py [all|eager|sidestream|graph1|graph2|compile|graph_f64|graph_dd|device]
        pytest tests/test_stream_safety.py
 Exit code 1 if a test fails. Needs e3nn and an installed flashTP_e3nn (rebuild it after changing the CUDA code).
 """
 import json, os, random, re, subprocess, sys
 
-TESTS = ['eager', 'sidestream', 'graph1', 'graph2', 'compile', 'graph_f64', 'graph_dd']
+TESTS = ['eager', 'sidestream', 'graph1', 'graph2', 'compile', 'graph_f64', 'graph_dd', 'device']
 TOL = 1e-5                         # max error relative to the largest reference value (float32 rounding: ~3e-7)
 N_NODE, K_NEIGH = 256, 32          # 8,192 edges grouped by destination, as in example/flashTP_test.py
 SLEEP_CYCLES = 500_000_000         # torch.cuda._sleep: about 0.2 s
@@ -95,6 +96,22 @@ def replay(torch, g, static, new):
 
 def run(test):
     import torch
+    if test == 'device':
+        if torch.cuda.device_count() < 2:
+            return {'skipped': 'needs 2 GPUs'}
+        torch.cuda.set_device(0)
+        _, A, _, src, dst = setup('cuda:1')
+        x, sh, w = inputs(torch, A, src.numel(), 2, 'cuda:1')
+        before = torch.cuda.current_device()
+        out = A['ftp'](x, sh, w, src, dst)
+        after = torch.cuda.current_device()
+        torch.cuda.synchronize(0); torch.cuda.synchronize(1)
+        # With peer access a kernel launched on cuda:0 can still read cuda:1's memory, so this case can pass
+        # without the device guard; it fails without it on GPUs without peer access.
+        return {'err': rel(out, reference(torch, A, x, sh, w, src, dst)),
+                'current_device_before_after': [before, after],
+                'peer_access_0_to_1': torch.cuda.can_device_access_peer(0, 1)}
+
     dev = 'cuda'
     if test == 'graph_f64':
         _, A, B, src, dst = setup(dev, torch.float64)
@@ -213,6 +230,8 @@ def check(r):
     ok = all(v < TOL for v in errs.values())     # NaN fails
     if 'layers_differ' in r:
         ok = ok and r['layers_differ'] > 0.1
+    if 'current_device_before_after' in r:
+        ok = ok and r['current_device_before_after'] == [0, 0]
     extra = {k: v for k, v in r.items() if not k.startswith('err')}
     return ok, ('ok    ' if ok else 'FAIL  ') + ', '.join(f'{k} {v:.1e}' for k, v in errs.items()) + \
         (f'  {extra}' if extra else '')
